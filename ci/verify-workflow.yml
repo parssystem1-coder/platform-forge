@@ -1,0 +1,68 @@
+# Full-push verification pipeline for platform-forge.
+# Implements handbook/40-engineering/44-ci-cd.md: this CI is not a lint
+# runner, it is the gate that stops broken architecture/data changes.
+name: verify
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  docs:
+    name: docs / markdown lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: markdownlint (handbook)
+        run: npx --yes markdownlint-cli2 "handbook/**/*.md" --config .markdownlint.jsonc
+
+  contracts:
+    name: contracts / openapi lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: OpenAPI lint
+        run: npx --yes @redocly/cli lint handbook/70-contracts/openapi.yaml
+
+  db-full-chain:
+    name: data / full migration chain
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: platform
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      PGHOST: localhost
+      PGPORT: "5432"
+      PGDATABASE: platform
+      PGSUPERUSER: postgres
+      PGSUPERPASSWORD: postgres
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends postgresql-client
+
+      - name: Full-push data verification
+        # bootstrap -> all migrations in canonical order -> P-DEBT
+        # validation as platform_app -> role/ownership/RLS audit
+        run: bash ci/db-full-verify.sh
