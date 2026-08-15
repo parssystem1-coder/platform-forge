@@ -30,7 +30,7 @@ Template نباید query دیتابیس یا اجرای کد داشته باش�
 ## Preferenceها
 
 | نوع | قابل خاموش کردن؟ |
-|---|---|
+| --- | --- |
 | Email verification | خیر |
 | Password reset | خیر |
 | Security alert | خیر |

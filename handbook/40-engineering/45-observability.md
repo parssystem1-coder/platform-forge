@@ -3,6 +3,7 @@
 ## 10.1 هدف
 
 اگر production خراب شد باید ظرف چند دقیقه بفهمیم:
+
 - چه requestی خراب شد
 - برای کدام user/tenant
 - در کدام use case
@@ -16,6 +17,7 @@
 ## 10.2 Request context
 
 برای هر request:
+
 - `requestId`
 - `correlationId`
 - `userId` (if authenticated)
@@ -29,9 +31,11 @@
 ## 10.3 Logging
 
 ### Format
+
 JSON logs only.
 
 ### Minimum fields
+
 - timestamp
 - level
 - service
@@ -63,6 +67,7 @@ JSON logs only.
 ## 10.4 Metrics
 
 حداقل metricها:
+
 - http request count
 - request duration histogram
 - login success/failure count
@@ -78,6 +83,7 @@ JSON logs only.
 ## 10.5 Tracing
 
 Spanهای اصلی:
+
 - http request
 - db transaction
 - email send
@@ -91,10 +97,13 @@ Trace باید بتواند register flow را از request تا DB و outbox ن
 ## 10.6 Health endpoints
 
 ### `/healthz`
+
 فقط نشان می‌دهد پروسه بالا است.
 
 ### `/readyz`
+
 نشان می‌دهد سرویس آماده‌ی سرو کردن است:
+
 - DB reachable
 - Redis reachable (اگر hard dependency)
 - migration level acceptable

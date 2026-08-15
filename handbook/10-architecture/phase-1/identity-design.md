@@ -39,7 +39,7 @@ active -> compromised
 ## Token policy
 
 | token | storage | lifetime | rotation |
-|---|---|---:|---|
+| --- | --- | ---: | --- |
 | access | memory/client response | 15m | هر refresh |
 | refresh | HttpOnly cookie + hash DB | 30d | هر استفاده |
 | email verification | hash DB | 24h | single-use |

@@ -15,7 +15,7 @@ PRODUCTION-READY  observability، security، rollback، load سبز
 ## وضعیت بعد از این اصلاحیه
 
 | بخش | قبل | بعد از اصلاحیه | شاهد |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Platform vision | SPEC | SPEC | اسناد درست، تغییر لازم نداشت |
 | Architecture contracts | SPEC | SPEC (اصلاح‌شده) | ۷ ADR جدید |
 | Phase map | متناقض | SPEC واحد | `05-canonical-phase-map.md` |

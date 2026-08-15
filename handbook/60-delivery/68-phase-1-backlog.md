@@ -7,7 +7,7 @@
 ## Sprint 0: Foundation
 
 | ID | تسک | خروجی | تخمین |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | F1-001 | ساخت pnpm workspace و Turbo | repo قابل build | ۲h |
 | F1-002 | ساخت apps/api و apps/worker | دو process جدا | ۲h |
 | F1-003 | اضافه کردن TypeScript strict و lint | quality baseline | ۲h |
@@ -19,7 +19,7 @@
 ## Sprint 1: Database and Kernel
 
 | ID | تسک | خروجی | تخمین |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | F1-008 | migration runner | اجرای versioned SQL | ۳h |
 | F1-009 | ساخت DB roles | app بدون مالکیت | ۲h |
 | F1-010 | اجرای core migration | tables + constraints | ۳h |
@@ -33,7 +33,7 @@
 ## Sprint 2: Registration and Verification
 
 | ID | تسک | خروجی | تخمین |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | F1-017 | User domain entity | invariantهای User | ۳h |
 | F1-018 | Credential repository و Argon2id | password storage | ۳h |
 | F1-019 | RegisterUser use case | User + Tenant + Membership atomic | ۴h |
@@ -46,7 +46,7 @@
 ## Sprint 3: Login and Sessions
 
 | ID | تسک | خروجی | تخمین |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | F1-025 | Session aggregate | lifecycle rules | ۳h |
 | F1-026 | JWT signing port | access token | ۲h |
 | F1-027 | Opaque refresh token store | hashed token | ۳h |
@@ -60,7 +60,7 @@
 ## Sprint 4: Authorization and Tenant Context
 
 | ID | تسک | خروجی | تخمین |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | F1-034 | Permission registry | stable keys | ۲h |
 | F1-035 | Role registry | owner/admin/member/viewer | ۲h |
 | F1-036 | authorize service | one decision point | ۴h |
@@ -73,7 +73,7 @@
 ## Sprint 5: Recovery and MFA
 
 | ID | تسک | خروجی | تخمین |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | F1-042 | password reset request | generic response | ۲h |
 | F1-043 | password reset completion | token single-use | ۳h |
 | F1-044 | TOTP setup challenge | secret encrypted | ۳h |
@@ -85,7 +85,7 @@
 ## Sprint 6: Outbox, Audit, Release
 
 | ID | تسک | خروجی | تخمین |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | F1-049 | domain event envelopes | versioned events | ۲h |
 | F1-050 | transactional outbox writer | same transaction | ۳h |
 | F1-051 | publisher worker | retry/backoff/dead letter | ۴h |

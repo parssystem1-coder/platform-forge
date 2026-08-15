@@ -64,6 +64,7 @@ CREATE OR REPLACE VIEW outbox_lag AS
          count(*) FILTER (WHERE status = 'claimed')                        AS in_flight,
          count(*) FILTER (WHERE status = 'dead')                           AS dead,
          COALESCE(max(now() - occurred_at) FILTER (WHERE status = 'pending'),
-                  interval '0')                                            AS oldest_pending_age;
+                  interval '0')                                            AS oldest_pending_age
+    FROM outbox_events;
 
 GRANT SELECT ON outbox_lag TO platform_worker, platform_readonly;

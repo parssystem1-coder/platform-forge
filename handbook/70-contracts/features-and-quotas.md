@@ -23,7 +23,7 @@ seo.audit
 ## کلیدهای Quota
 
 | کلید | نوع | واحد |
-|------|-----|------|
+| ------ | ----- | ------ |
 | `tenancy.members` | gauge | نفر |
 | `commerce.products` | gauge | عدد |
 | `commerce.orders_per_month` | counter | عدد |
@@ -38,7 +38,7 @@ seo.audit
 > این فقط نقطه شروع است. اعداد واقعی باید با مشتری واقعی تنطیم شوند.
 
 | | Starter | Professional | Business | Enterprise |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | `commerce.catalog` | ✓ | ✓ | ✓ | ✓ |
 | `commerce.orders` | ✓ | ✓ | ✓ | ✓ |
 | `commerce.inventory` | – | ✓ | ✓ | ✓ |

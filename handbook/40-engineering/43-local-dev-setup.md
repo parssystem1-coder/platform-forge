@@ -11,6 +11,7 @@
 ## 12.2 سرویس‌های محلی
 
 با docker compose بالا می‌آیند:
+
 - postgres
 - redis
 - mailpit (برای تست ایمیل)
@@ -26,6 +27,7 @@ cp .env.example .env
 ```
 
 کلیدهای اصلی:
+
 - `NODE_ENV`
 - `PORT`
 - `DATABASE_URL`

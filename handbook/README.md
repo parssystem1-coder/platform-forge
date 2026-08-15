@@ -59,15 +59,17 @@
 ## فهرست کامل
 
 ### 00-executive
+
 | فایل | محتوا |
-|------|--------|
+| ------ | -------- |
 | 01-product-definition.md | محصول، چهار نوع کاربر، مفاهیم، اهداف عددی |
 | 02-architecture-decisions-summary.md | جدول ۱۵ تصمیم و شرط بازبینی |
 | 03-what-changed-and-why.md | تفاوت با نسخه اول و دلیل هر تغییر |
 
 ### 10-architecture
+
 | فایل | محتوا |
-|------|--------|
+| ------ | -------- |
 | 11-system-overview.md | Control Plane در مقابل Data Plane، نمودار کلی |
 | 12-layering-and-dependency-rules.md | قوانین غیرقابل مذاکره و اجبار در CI |
 | 13-module-catalog.md | هر ماژول، قراردادش و فازش |
@@ -82,8 +84,9 @@
 | 22-ai-and-extensibility.md | AI Gateway، MCP، اتوماسیون، افزونه |
 
 ### 30-data
+
 | فایل | محتوا |
-|------|--------|
+| ------ | -------- |
 | 31-data-model-core.md | مدل داده هویت، نشست، تنانسی، Audit، Outbox |
 | 32-migration-and-lifecycle.md | الگوی دومرحله‌ای، عملیات خطرناک، نگهداری، پشتیبان |
 | ddl/0001_core.sql | مهاجرت فاز ۱، قابل اجرا |
@@ -91,8 +94,9 @@
 | ddl/0003_rls_phase2.sql | سیاست RLS فاز ۲ به صورت خودکار |
 
 ### 40-engineering
+
 | فایل | محتوا |
-|------|--------|
+| ------ | -------- |
 | 41-coding-standards.md | نام‌گذاری، Controller، Use Case، خطا، تراکنش |
 | 42-testing-strategy.md | پنج لایه تست و سوییت نشتی |
 | 43-local-dev-setup.md | راه‌اندازی محلی قدم به قدم |
@@ -104,14 +108,16 @@
 | 49-runbook.md | رانبوک ساعت ۳ بامداد |
 
 ### 50-frontend
+
 | فایل | محتوا |
-|------|--------|
+| ------ | -------- |
 | 51-frontend-architecture.md | چهار سطح، مدیریت توکن، نگاشت خطا به UI |
 | 52-design-system.md | توکن، مولفه، دسترس‌پذیری، RTL |
 
 ### 60-delivery
+
 | فایل | محتوا |
-|------|--------|
+| ------ | -------- |
 | 61-roadmap-phases.md | ۱۳ فاز با شرط ورود و تخمین |
 | 62-phase-1-execution-plan.md | دقیقاً از کجا شروع کنی |
 | 63-definition-of-done.md | چک‌لیست پذیرش فاز ۱ |
@@ -119,8 +125,9 @@
 | 65-risk-register.md | ۱۵ ریسک با پاسخ معماری |
 
 ### 70-contracts
+
 | فایل | محتوا |
-|------|--------|
+| ------ | -------- |
 | openapi.yaml | قرارداد ماشین‌خوان API |
 | errors.md | کاتالوگ خطا با کد وضعیت |
 | events.md | کاتالوگ رخداد و پاکت |
@@ -128,13 +135,15 @@
 | features-and-quotas.md | کاتالوگ قابلیت و سقف و ماتریس پلن |
 
 ### 80-adr
+
 ۱۴ تصمیم معماری، هر یک با زمینه، تصمیم، پیامد منفی و شرط بازبینی.
 
 ### 90-skeleton
+
 فایل‌های واقعی قابل کپی به مخزن:
 
 | فایل | چرا مهم است |
-|------|-------------|
+| ------ | ------------- |
 | `docker-compose.yml` | Postgres و Redis و Mailpit |
 | `.env.example` | تمام کلیدهای لازم |
 | `.dependency-cruiser.cjs` | مرزهای معماری را اجبار می‌کند |
@@ -284,7 +293,6 @@ Master Agent برای این فاز همچنان `MASTER_AGENT_HANDOFF.md` اس�
 
 فاز بعد در `67-delivery/phase-7-billing-ledger/05-next-phase.md` ثبت شده است.
 
-
 ---
 
 ## سند اصلاحیه نسخه ۳ (2026-08-15)
@@ -296,7 +304,7 @@ Master Agent برای این فاز همچنان `MASTER_AGENT_HANDOFF.md` اس�
 همه‌چیز در `99-amendment/` است. شروع از `99-amendment/00-INDEX.md`.
 
 | موضوع | فایل |
-|---|---|
+| --- | --- |
 | رجیستری کامل ۳۴ یافته | `99-amendment/01-findings-register.md` |
 | ۹ اصلاح امنیتی P0 | `99-amendment/02-critical-security-fixes.md` |
 | باگ‌های کد skeleton | `99-amendment/03-code-defects.md` |

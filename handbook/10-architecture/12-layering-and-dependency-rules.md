@@ -37,12 +37,14 @@ module A        -> داخل module B    ممنوع
 ## ۱۲.۲ لایه domain
 
 ### اجازه دارد
+
 - موجودیت و مقدار (Entity, Value Object)
 - قاعده و سیاست خالص
 - خطای دامنه
 - رخداد دامنه (فقط تولید، نه انتشار)
 
 ### ممنوع است
+
 - import از NestJS، ORM، HTTP، Redis، لاگر
 - خواندن `process.env`
 - خواندن `Date.now()` مستقیم (از `Clock` بگیر)
@@ -132,6 +134,7 @@ async create(@Body() dto: CreateProductDto, @Actor() ctx: ActorContext) {
 ```
 
 ### ممنوعیت‌های Controller
+
 - باز کردن تراکنش
 - زدن query
 - تفسیر نقش یا دسترسی
@@ -144,7 +147,7 @@ async create(@Body() dto: CreateProductDto, @Actor() ctx: ActorContext) {
 هر وابستگی خارجی از پشت یک پورت می‌آید:
 
 | پورت | پیاده‌سازی فاز ۱ |
-|------|-------------------|
+| ------ | ------------------- |
 | `PasswordHasher` | Argon2id |
 | `TokenSigner` | jose (EdDSA یا RS256) |
 | `EmailSender` | SMTP و در local، Mailpit |
@@ -187,7 +190,7 @@ export { COMMERCE_PERMISSIONS } from './application/permissions';
 فایل `.dependency-cruiser.cjs` در `90-skeleton/` قوانین زیر را اجبار می‌کند:
 
 | قانون | شدت |
-|-------|------|
+| ------- | ------ |
 | domain → infrastructure | error |
 | domain → interfaces | error |
 | domain → پکیج خارجی ممنوعه | error |

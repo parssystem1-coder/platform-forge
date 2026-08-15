@@ -18,7 +18,7 @@ S0 امنیت دیتابیس   →  S1 مخزن قابل اجرا  →  S2 در�
 خروجی قابل نمایش: دو کوئری طلایی `02-critical-security-fixes.md` صفر ردیف بدهند.
 
 | تسک | کار | یافته | تخمین |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | T-01 | اجرای `0000_bootstrap_roles.sql` و جدا کردن نقش app از owner | D-003، F-032 | 3h |
 | T-02 | RLS دو جدول outbox با نقش جداگانه `platform_worker` | F-001، F-002 | 3h |
 | T-03 | افزودن `WITH CHECK` به تمام پالیسی‌های فاز ۱ تا ۳ | F-006 | 3h |
@@ -51,7 +51,7 @@ curl localhost:3000/healthz # 200
 ```
 
 | تسک | کار | یافته | تخمین |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | T-08 | workspace واقعی: `pnpm-workspace.yaml`، `turbo.json`، `tsconfig.base.json`، lockfile | D-002 | 4h |
 | T-09 | API واقعی NestJS: bootstrap، ConfigModule، validation pipe، Problem Details filter، `/healthz`، `/readyz` | D-001 | 4h |
 | T-10 | Worker مستقل: handler registry، graceful shutdown، health signal | D-001، D-009 | 4h |
@@ -64,7 +64,7 @@ curl localhost:3000/healthz # 200
 ## Sprint 2: درستی کد (حدود ۴ روز)
 
 | تسک | کار | یافته | تخمین |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | T-14 | رفع سه باگ `quota-service` + تست همزمانی واقعی (۲۰ رزرو موازی روی سقف ۱۰) | F-010، F-011، F-012 | 4h |
 | T-15 | بازنویسی outbox publisher با claim lease + تست crash و تست duplicate | F-013، F-014، D-006 | 4h |
 | T-16 | اصلاح `authorize`: مسیر machine، مسیر staff با audit، `authorizeCustomer` | F-015، F-029، F-030 | 4h |
@@ -78,7 +78,7 @@ curl localhost:3000/healthz # 200
 ## Sprint 3: حاکمیت و پاکسازی (حدود ۲ روز)
 
 | تسک | کار | یافته | تخمین |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | T-21 | اعمال نقشه فاز واحد و پاکسازی هفت «فاز جاری» در README | F-023، F-024 | 2h |
 | T-22 | بازسازی پوشه‌های delivery در یک commit با اصلاح لینک‌ها | F-025، F-026 | 3h |
 | T-23 | اصلاح معنای تیک در completeness-check و پر کردن `ARCHITECTURE_STATUS.md` | F-019 | 2h |

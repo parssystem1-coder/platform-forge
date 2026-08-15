@@ -21,12 +21,14 @@
 ## 5.3 Controllers
 
 Controller مجاز است:
+
 - DTO parse/validate کند
 - principal را از request بخواند
 - use case را صدا بزند
 - پاسخ را map کند
 
 Controller مجاز نیست:
+
 - transaction باز کند
 - query DB بزند
 - logic تصمیم‌گیری داشته باشد
@@ -37,6 +39,7 @@ Controller مجاز نیست:
 ## 5.4 Use Cases
 
 هر use case باید:
+
 - ورودی صریح داشته باشد
 - خروجی صریح داشته باشد
 - transaction boundary مشخص داشته باشد
@@ -44,6 +47,7 @@ Controller مجاز نیست:
 - audit/outbox را orchestrate کند اگر لازم است
 
 Use case نباید:
+
 - HTTP status code بشناسد
 - response header ست کند
 - به framework primitive وابسته باشد
@@ -53,11 +57,13 @@ Use case نباید:
 ## 5.5 Domain
 
 Domain باید:
+
 - invariantها را enforce کند
 - ruleهای واقعی را در خود نگه دارد
 - مستقل از framework باشد
 
 مثال:
+
 - ایمیل تأییدنشده نمی‌تواند session فعال بگیرد
 - recovery code فقط یک‌بار مصرف است
 - session revoked نمی‌تواند refresh شود
@@ -69,6 +75,7 @@ Domain باید:
 همه‌ی خطاها باید machine-readable code داشته باشند.
 
 نمونه:
+
 - `identity.email_already_used`
 - `identity.invalid_credentials`
 - `identity.email_not_verified`
@@ -87,6 +94,7 @@ Domain باید:
 Repositoryها transaction را «یواشکی» باز نکنند مگر explicitly از transaction context استفاده کنند.
 
 قانون tenant-aware read/write:
+
 - اگر query به tenant-bound table می‌رسد، فقط داخل `withTenant()` اجرا شود.
 
 ---
@@ -121,11 +129,13 @@ Repositoryها transaction را «یواشکی» باز نکنند مگر explic
 لاگ باید ساختاریافته و event-oriented باشد.
 
 بد:
+
 ```text
 something went wrong
 ```
 
 خوب:
+
 ```json
 {
   "event": "auth.login.failed",
@@ -151,6 +161,7 @@ something went wrong
 ## 5.13 Definition of merge-ready code
 
 یک PR فقط وقتی merge-ready است که:
+
 - tests سبز
 - boundaries enforce شده
 - OpenAPI update شده

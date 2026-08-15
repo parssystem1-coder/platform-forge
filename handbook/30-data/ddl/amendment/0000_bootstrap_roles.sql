@@ -10,6 +10,8 @@
 --    platform_app       : the ONLY role the API and Worker connect with.
 --                         Owns nothing. Never bypasses RLS.
 --    platform_readonly  : analytics/support. SELECT only, still under RLS.
+--    platform_worker    : outbox worker. Cross-tenant reads ONLY on the
+--                         outbox tables, via explicit grants in 0010.
 -- ---------------------------------------------------------------------
 DO $$
 BEGIN
@@ -22,6 +24,12 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'platform_readonly') THEN
     CREATE ROLE platform_readonly LOGIN;
   END IF;
+  -- Worker role is created here (superuser bootstrap) because
+  -- platform_migration has NOCREATEROLE and cannot create roles itself;
+  -- 0010_rls_hardening.sql guards with IF NOT EXISTS and only grants.
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'platform_worker') THEN
+    CREATE ROLE platform_worker LOGIN NOBYPASSRLS NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT;
+  END IF;
 END $$;
 
 -- Passwords are injected by the deploy pipeline, never committed.
@@ -32,9 +40,17 @@ END $$;
 -- ---------------------------------------------------------------------
 ALTER ROLE platform_app       NOBYPASSRLS NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT;
 ALTER ROLE platform_readonly  NOBYPASSRLS NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT;
+ALTER ROLE platform_worker    NOBYPASSRLS NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT;
 -- The migration role is the controlled schema owner and must apply migrations
 -- to FORCE RLS tables. It is never used by API or Worker.
 ALTER ROLE platform_migration BYPASSRLS NOSUPERUSER;
+
+-- Migrations need to install TRUSTED extensions (citext, pgcrypto),
+-- which requires CREATE on the current database, not superuser.
+DO $$
+BEGIN
+  EXECUTE format('GRANT CREATE ON DATABASE %I TO platform_migration', current_database());
+END $$;
 
 -- ---------------------------------------------------------------------
 -- 3. Schema ownership and default privileges

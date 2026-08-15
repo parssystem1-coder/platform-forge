@@ -18,6 +18,7 @@
 ## 8.2 Endpoint set گام اول
 
 ### Public
+
 - `POST /api/v1/auth/register`
 - `POST /api/v1/auth/verify-email`
 - `POST /api/v1/auth/resend-verification`
@@ -27,6 +28,7 @@
 - `POST /api/v1/auth/reset-password`
 
 ### Authenticated
+
 - `POST /api/v1/auth/logout`
 - `POST /api/v1/auth/logout-all`
 - `GET /api/v1/me`
@@ -39,6 +41,7 @@
 - `POST /api/v1/tenants/switch`
 
 ### Platform operational
+
 - `GET /healthz`
 - `GET /readyz`
 - `GET /metrics`
@@ -64,6 +67,7 @@
 ### Behavior
 
 در یک تراکنش:
+
 - user ساخته می‌شود
 - credential ساخته می‌شود
 - tenant ساخته می‌شود
@@ -72,6 +76,7 @@
 - audit و outbox ثبت می‌شود
 
 ### Response
+
 `201 Created`
 
 ```json
@@ -83,6 +88,7 @@
 ```
 
 ### Failure examples
+
 - duplicate email
 - duplicate tenant slug
 - weak password
@@ -143,10 +149,12 @@ Token opaque از ایمیل می‌آید، سرور hash می‌کند و row 
 `POST /auth/refresh` با cookie.
 
 Success:
+
 - access token جدید
 - refresh token rotated
 
 اگر reuse detected شد:
+
 - `401`
 - session compromised
 - cookie پاک می‌شود
@@ -179,6 +187,7 @@ Success:
 ## 8.8 Tenant list and switch
 
 ### `GET /tenants`
+
 برمی‌گرداند عضویت‌های فعال کاربر.
 
 ### `POST /tenants/switch`
@@ -190,6 +199,7 @@ Success:
 ```
 
 Behavior:
+
 - membership validate
 - tenant active check
 - access token جدید با claim مربوطه یا response context برگردد
@@ -205,12 +215,14 @@ Switch endpoint فقط preference لایه‌ی client را ساده می‌کن
 ## 8.9 MFA setup
 
 ### Setup
+
 - secret تولید می‌شود
 - otpauth URI برمی‌گردد
 - QR generation client-side یا server-side optional
 - factor تا verify نهایی active نیست
 
 ### Verify
+
 - user کد TOTP را می‌فرستد
 - اگر درست بود factor verified می‌شود
 - recovery codes جدید تولید می‌شوند

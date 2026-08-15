@@ -31,7 +31,7 @@
 ## ۳۲.۲ عملیات خطرناک در Postgres
 
 | عملیات | ریسک | راه امن |
-|-------|------|----------|
+| ------- | ------ | ---------- |
 | `ALTER TABLE ... ADD COLUMN NOT NULL DEFAULT` | قفل طولانی در نسخه‌های قدیم | افزودن nullable و سپس backfill |
 | `CREATE INDEX` | قفل نوشتن | `CREATE INDEX CONCURRENTLY` |
 | تغییر نوع ستون | بازنویسی کل جدول | ستون جدید و مهاجرت تدریجی |
@@ -71,7 +71,7 @@ Tenant: active -> suspended -> canceled -> grace -> archived -> purged
 ### سیاست نگهداری پیشنهادی
 
 | داده | مدت |
-|------|------|
+| ------ | ------ |
 | Audit log | ۲ سال |
 | Usage event خام | ۱۳ ماه |
 | Outbox منتشرشده | ۷ روز در جدول اصلی |
@@ -82,6 +82,7 @@ Tenant: active -> suspended -> canceled -> grace -> archived -> purged
 ### حق فراموشی
 
 درخواست حذف داده‌ی یک خریدار باید:
+
 - داده شخصی را بی‌نام کند
 - رکوردهای مالی را حفظ کند (الزام قانونی)
 - در Audit ثبت شود
@@ -93,7 +94,7 @@ Tenant: active -> suspended -> canceled -> grace -> archived -> purged
 ## ۳۲.۵ پشتیبان و بازیابی
 
 | مورد | سیاست |
-|------|--------|
+| ------ | -------- |
 | پشتیبان کامل | روزانه |
 | WAL مستمر | برای PITR |
 | RPO هدف | حداکثر ۵ دقیقه |

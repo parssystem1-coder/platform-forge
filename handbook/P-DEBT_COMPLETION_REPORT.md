@@ -22,7 +22,7 @@ This is the correct result. Marking the phase complete now would turn the docume
 ## New findings discovered during re-verification
 
 | ID | Severity | Finding | Status |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | RT-001 | S0 | `platform_migration` was `NOBYPASSRLS` while owning FORCE-RLS tables and had no policies for most migration operations. | Fixed: migration role is explicit `BYPASSRLS`; never used by applications. |
 | RT-002 | S0 | Outbox `IS NOT DISTINCT FROM` app policies allowed no-context app access to platform-level rows. | Fixed: app policies require `tenant_id = app_current_tenant()`. |
 | RT-003 | S1 | `ledger_lines` remained nullable and NULL was treated as a valid app-visible boundary. | Fixed: strict `NOT NULL`, with explicit preflight failure for legacy NULL lines. |
@@ -31,7 +31,7 @@ This is the correct result. Marking the phase complete now would turn the docume
 ## Task status, in source-of-truth order
 
 | Task group | Status | Evidence / blocker |
-|---|---|---|
+| --- | --- | --- |
 | T-01..T-07, S0 database security | `CODE-READY / BLOCKED` | Amendment migrations exist and were red-team patched. No real PostgreSQL execution available. |
 | T-08, workspace bootstrap | `PARTIAL / BLOCKED` | workspace files were added, but no lockfile or complete package manifests exist. `pnpm install --frozen-lockfile` cannot be proven. |
 | T-09, API bootstrap | `BLOCKED` | `main.ts`, Nest DI, health endpoints and Problem Details filter are still missing. |

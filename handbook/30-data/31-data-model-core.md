@@ -8,6 +8,7 @@
 2. **Tenant Realm**: tenant, membership, active tenant context, tenant-scoped audit
 
 چیزی که عمداً نداریم:
+
 - customer identities برای storefront
 - billing entities
 - entitlement entities
@@ -60,7 +61,7 @@ audit_logs (generic, optional tenant/user scoped)
 ### users
 
 | column | type | notes |
-|--------|------|-------|
+| -------- | ------ | ------- |
 | id | uuid pk | app-generated |
 | email | citext unique not null | normalized |
 | email_verified_at | timestamptz null | null until verified |
@@ -77,7 +78,7 @@ audit_logs (generic, optional tenant/user scoped)
 ### user_credentials
 
 | column | type | notes |
-|--------|------|-------|
+| -------- | ------ | ------- |
 | user_id | uuid pk fk users(id) | one-to-one |
 | password_hash | text not null | Argon2id |
 | password_changed_at | timestamptz not null | |
@@ -89,7 +90,7 @@ audit_logs (generic, optional tenant/user scoped)
 ### email_verification_tokens
 
 | column | type | notes |
-|--------|------|-------|
+| -------- | ------ | ------- |
 | id | uuid pk | |
 | user_id | uuid fk users(id) | |
 | token_hash | text unique not null | SHA-256 of opaque token |
@@ -108,7 +109,7 @@ audit_logs (generic, optional tenant/user scoped)
 ### mfa_totp_factors
 
 | column | type | notes |
-|--------|------|-------|
+| -------- | ------ | ------- |
 | id | uuid pk | |
 | user_id | uuid fk users(id) | |
 | secret_ciphertext | bytea not null | encrypted at rest |
@@ -121,7 +122,7 @@ audit_logs (generic, optional tenant/user scoped)
 ### mfa_recovery_codes
 
 | column | type | notes |
-|--------|------|-------|
+| -------- | ------ | ------- |
 | id | uuid pk | |
 | user_id | uuid fk users(id) | |
 | code_hash | text unique not null | hashed |
@@ -141,7 +142,7 @@ DB فقط fingerprint/hash و family state را نگه می‌دارد.
 ### sessions
 
 | column | type | notes |
-|--------|------|-------|
+| -------- | ------ | ------- |
 | id | uuid pk | |
 | user_id | uuid fk users(id) | |
 | status | text not null | `active`, `revoked`, `expired`, `compromised` |
@@ -157,7 +158,7 @@ DB فقط fingerprint/hash و family state را نگه می‌دارد.
 ### session_refresh_tokens
 
 | column | type | notes |
-|--------|------|-------|
+| -------- | ------ | ------- |
 | id | uuid pk | |
 | session_id | uuid fk sessions(id) | |
 | token_hash | text unique not null | hashed opaque token |
@@ -172,6 +173,7 @@ DB فقط fingerprint/hash و family state را نگه می‌دارد.
 ### reuse detection
 
 اگر refresh token مصرف‌شده دوباره ارائه شد:
+
 - session `compromised` می‌شود
 - تمام tokenهای family revoke می‌شوند
 - کاربر باید دوباره login کند
@@ -184,7 +186,7 @@ DB فقط fingerprint/hash و family state را نگه می‌دارد.
 ### tenants
 
 | column | type | notes |
-|--------|------|-------|
+| -------- | ------ | ------- |
 | id | uuid pk | |
 | name | text not null | |
 | slug | citext unique not null | |
@@ -199,7 +201,7 @@ DB فقط fingerprint/hash و family state را نگه می‌دارد.
 ### memberships
 
 | column | type | notes |
-|--------|------|-------|
+| -------- | ------ | ------- |
 | id | uuid pk | |
 | tenant_id | uuid fk tenants(id) | |
 | user_id | uuid fk users(id) | |
@@ -211,6 +213,7 @@ DB فقط fingerprint/hash و family state را نگه می‌دارد.
 | updated_at | timestamptz not null | |
 
 Constraint:
+
 - unique `(tenant_id, user_id)`
 
 ### active tenant preference
@@ -226,7 +229,7 @@ Tenant فعال از request/header یا claim می‌آید و هر بار memb
 ### audit_logs
 
 | column | type | notes |
-|--------|------|-------|
+| -------- | ------ | ------- |
 | id | uuid pk | |
 | occurred_at | timestamptz not null | |
 | actor_user_id | uuid null | |
@@ -248,7 +251,7 @@ append-only. update/delete ممنوع.
 ### outbox_events
 
 | column | type | notes |
-|--------|------|-------|
+| -------- | ------ | ------- |
 | id | uuid pk | event id |
 | aggregate_type | text not null | |
 | aggregate_id | uuid not null | |
@@ -265,6 +268,7 @@ append-only. update/delete ممنوع.
 | causation_id | uuid null | |
 
 Indexها:
+
 - `(published_at, available_at)` partial where `published_at is null`
 - `(aggregate_type, aggregate_id)`
 - `(tenant_id, occurred_at)`
@@ -274,6 +278,7 @@ Indexها:
 ## 6.10 RLS scope
 
 در گام اول فقط جداول tenant-bound باید RLS داشته باشند. یعنی:
+
 - tenants
 - memberships
 - audit_logs (tenant-scoped rows)

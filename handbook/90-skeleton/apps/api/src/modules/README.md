@@ -1,6 +1,7 @@
 # Starter module notes
 
 Create modules with:
+
 - domain
 - application
 - interfaces

@@ -6,7 +6,7 @@
 ## تناقضی که بود
 
 | فاز | طبق HANDOFF بند ۵ | طبق 61-roadmap | طبق پوشه‌های واقعی |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | ۳ | Workers + Notifications | Notifications + Workers | Reliability |
 | ۴ | Features + Plans | Features و پلن | **Architecture Debt** |
 | ۵ | Billing + Ledger | Billing + Ledger | **Commerce Implementation** |
@@ -20,7 +20,7 @@
 نام‌گذاری عمداً از شماره به نام تغییر کرد، چون شماره‌ها سه بار جابجا شده‌اند و دیگر قابل اعتماد نیستند.
 
 | کلید | فاز | وضعیت واقعی امروز | شرط ورود |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `P-FOUNDATION` | مخزن قابل اجرا، CI، compose، kernel | `SPEC` و `SKELETON` ناقص | — |
 | `P-DEBT` | بستن D-001..D-008 و F-001..F-034 | **فاز جاری واقعی** | — |
 | `P-IDENTITY` | Identity + Tenancy + AuthZ واقعی | `SPEC` کامل، کد صفر | Gate فاز P-DEBT |

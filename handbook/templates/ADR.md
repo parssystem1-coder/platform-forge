@@ -1,6 +1,7 @@
 # ADR-NNNN: Title
 
 ## Status
+
 Proposed
 
 ## Context

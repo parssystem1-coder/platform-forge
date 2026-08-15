@@ -1,0 +1,17 @@
+{
+  // Lenient baseline for the handbook: structure and consistency checks
+  // on, purely cosmetic rules off. Tighten over time.
+  "default": true,
+  "MD013": false, // line length (Persian prose, tables)
+  "MD024": { "siblings_only": true }, // duplicate headings allowed in different sections
+  "MD033": false, // inline HTML
+  "MD036": false, // emphasis used as heading
+  "MD040": false, // fenced code language
+  "MD041": false, // first line h1
+  "MD046": false, // code block style
+  "MD029": false, // ordered list item prefix
+  "MD030": false, // list marker spacing
+  "MD055": false, // table pipe style (cosmetic)
+  // MD056 (table column count) left ON: broken tables were fixed 2026-08-15.
+  "MD060": false // table column alignment (Persian prose width)
+}

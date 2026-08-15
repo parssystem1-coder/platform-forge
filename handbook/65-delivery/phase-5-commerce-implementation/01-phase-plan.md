@@ -3,7 +3,7 @@
 ## Workstream A: Catalog
 
 | ID | Task | Acceptance |
-|---|---|---|
+| --- | --- | --- |
 | C5-001 | Product domain aggregate | invariant tests |
 | C5-002 | Variant value object | price/currency/SKU tests |
 | C5-003 | Product repository port | domain-independent interface |
@@ -17,7 +17,7 @@
 ## Workstream B: Storefront Read Model
 
 | ID | Task | Acceptance |
-|---|---|---|
+| --- | --- | --- |
 | C5-010 | Product event schemas | schema validation |
 | C5-011 | Projection repository | idempotent version update |
 | C5-012 | Product projector | replay test |
@@ -29,7 +29,7 @@
 ## Workstream C: Customer and Cart
 
 | ID | Task | Acceptance |
-|---|---|---|
+| --- | --- | --- |
 | C5-017 | Customer aggregate | tenant/email invariant |
 | C5-018 | Guest customer use case | same email per tenant only |
 | C5-019 | Customer session boundary | cannot access admin API |
@@ -40,7 +40,7 @@
 ## Workstream D: Inventory and Orders
 
 | ID | Task | Acceptance |
-|---|---|---|
+| --- | --- | --- |
 | C5-023 | Inventory reservation SQL | atomic concurrency test |
 | C5-024 | Reservation expiry job | release test |
 | C5-025 | Order aggregate | valid state machine |
@@ -54,7 +54,7 @@
 ## Workstream E: Frontend and Demo
 
 | ID | Task | Acceptance |
-|---|---|---|
+| --- | --- | --- |
 | C5-032 | Admin product form | validation/error states |
 | C5-033 | Admin inventory view | accessible table |
 | C5-034 | Storefront product page | RTL/responsive |
@@ -65,7 +65,7 @@
 ## Workstream F: Quality Gate
 
 | ID | Task | Acceptance |
-|---|---|---|
+| --- | --- | --- |
 | C5-038 | Product tenant leak suite | green |
 | C5-039 | Order ownership suite | green |
 | C5-040 | Inventory 50-way concurrency test | max 10 success for stock 10 |

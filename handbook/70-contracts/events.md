@@ -1,6 +1,7 @@
 # Event Catalog
 
 ## v1 events in Step 1
+
 - `identity.user_registered`
 - `identity.email_verified`
 - `identity.login_succeeded`
@@ -13,6 +14,7 @@
 - `tenancy.membership_created`
 
 ## Envelope
+
 ```json
 {
   "id": "uuid",

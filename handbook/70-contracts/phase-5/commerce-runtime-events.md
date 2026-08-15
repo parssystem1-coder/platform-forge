@@ -22,7 +22,7 @@ commerce.order_canceled
 ## Consumers
 
 | event | consumer |
-|---|---|
+| --- | --- |
 | product_* | storefront projector |
 | order_created | order confirmation notification |
 | order_paid | receipt notification و fulfillment future |
