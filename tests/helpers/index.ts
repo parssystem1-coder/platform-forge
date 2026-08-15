@@ -102,6 +102,17 @@ export async function createOwnerPool(): Promise<TestPool> {
  * Fixture: insert a tenant and one sample row for it, using the owner
  * connection so RLS doesn't block the setup.
  */
+/** Every test owns its data. No shared fixtures, no test ordering. */
+export async function truncateAll(owner: TestPool): Promise<void> {
+  await owner.transaction(async (tx) => {
+    const rows = await tx.query<{ tablename: string }>(
+      `select tablename from pg_tables where schemaname = 'public'`,
+    );
+    const names = rows.map((r) => '"' + r.tablename + '"').join(', ');
+    if (names) await tx.query('truncate ' + names + ' cascade');
+  });
+}
+
 export async function seedTenant(ownerPool: TestPool, slug: string): Promise<string> {
   const tenantId = randomUUID();
   const userId = randomUUID();

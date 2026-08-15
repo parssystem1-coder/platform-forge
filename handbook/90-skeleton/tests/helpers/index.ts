@@ -109,11 +109,47 @@ export async function createOwnerPool(): Promise<TestPool> {
 
 export async function seedTenant(owner: TestPool, slug: string): Promise<string> {
   const tenantId = randomUUID();
+  const userId = randomUUID();
+  const productId = randomUUID();
+  const customerId = randomUUID();
+  const orderId = randomUUID();
+
   await owner.transaction(async (tx) => {
     await tx.query(
       `insert into tenants (id, name, slug, status, locale, timezone, currency, created_at, updated_at)
-       values ($1, $2, $3, 'active', 'en-US', 'UTC', 'USD', now(), now())`,
-      [tenantId, slug, slug + '-' + tenantId.slice(0, 8)],
+       values ($1, $2, $3, 'active', 'en-US', 'UTC', 'USD', now(), now())
+       on conflict (slug) do update set updated_at = now()`,
+      [tenantId, slug, slug],
+    );
+    await tx.query(
+      `insert into users (id, email, display_name, status, created_at, updated_at)
+       values ($1, $2, $3, 'active', now(), now())
+       on conflict do nothing`,
+      [userId, `${slug}-owner@example.com`, `${slug} Owner`],
+    );
+    await tx.query(
+      `insert into memberships (id, tenant_id, user_id, role, status, joined_at, created_at, updated_at)
+       values ($1, $2, $3, 'owner', 'active', now(), now(), now())
+       on conflict do nothing`,
+      [randomUUID(), tenantId, userId],
+    );
+    await tx.query(
+      `insert into products (id, tenant_id, slug, title, status, created_at, updated_at)
+       values ($1, $2, $3, $4, 'active', now(), now())
+       on conflict do nothing`,
+      [productId, tenantId, `sample-${slug}`, `Sample ${slug}`],
+    );
+    await tx.query(
+      `insert into customers (id, tenant_id, email, display_name, status, created_at, updated_at)
+       values ($1, $2, $3, $4, 'active', now(), now())
+       on conflict do nothing`,
+      [customerId, tenantId, `${slug}-customer@example.com`, `${slug} Customer`],
+    );
+    await tx.query(
+      `insert into orders (id, tenant_id, customer_id, number, status, subtotal_minor, tax_minor, total_minor, currency, placed_at, created_at, updated_at)
+       values ($1, $2, $3, $4, 'pending', 1000, 0, 1000, 'USD', now(), now(), now())
+       on conflict do nothing`,
+      [orderId, tenantId, customerId, `ORD-${slug}-001`],
     );
   });
   return tenantId;
