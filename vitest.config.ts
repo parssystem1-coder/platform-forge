@@ -9,15 +9,23 @@ function loadTestEnv() {
     console.log('[vitest] Loading environment from:', envPath);
     const envContent = readFileSync(envPath, 'utf-8');
     for (const line of envContent.split('\n')) {
-      const match = line.match(/^([^=]+)=(.*)$/);
+      const trimmedLine = line.trim();
+      // Skip empty lines and comments
+      if (!trimmedLine || trimmedLine.startsWith('#')) continue;
+      
+      const match = trimmedLine.match(/^([^=]+)=(.*)$/);
       if (match) {
         const key = match[1].trim();
         const value = match[2].trim();
         if (!process.env[key]) {
           process.env[key] = value;
+          if (key.includes('DATABASE')) {
+            console.log(`[vitest] ✓ Set ${key}`);
+          }
         }
       }
     }
+    console.log('[vitest] DATABASE_URL_APP:', process.env.DATABASE_URL_APP || '(not set)');
   }
 }
 

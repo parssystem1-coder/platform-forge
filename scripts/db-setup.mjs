@@ -47,12 +47,17 @@ async function setup() {
     console.log('📄 Loading environment from:', envPath);
     const envContent = readFileSync(envPath, 'utf-8');
     for (const line of envContent.split('\n')) {
-      const match = line.match(/^([^=]+)=(.*)$/);
+      const trimmedLine = line.trim();
+      // Skip empty lines and comments
+      if (!trimmedLine || trimmedLine.startsWith('#')) continue;
+      
+      const match = trimmedLine.match(/^([^=]+)=(.*)$/);
       if (match) {
         const key = match[1].trim();
         const value = match[2].trim();
         if (!process.env[key]) {
           process.env[key] = value;
+          console.log(`   ✓ Set ${key}`);
         }
       }
     }
@@ -61,6 +66,8 @@ async function setup() {
     console.log('   Environment variables must be set directly or use:');
     console.log('   DATABASE_URL_SUPER=postgres://postgres:password@localhost:5432/postgres pnpm db:setup');
   }
+
+  console.log('   Current DATABASE_URL_SUPER:', process.env.DATABASE_URL_SUPER || '(not set)');
 
   const superConnectionString = process.env.DATABASE_URL_SUPER || process.env.DATABASE_URL;
   
