@@ -9,15 +9,6 @@
 # and runs the P-DEBT validation suite as the untrusted app role.
 #
 # Any failed statement aborts the run (ON_ERROR_STOP).
-#
-# Required environment:
-#   PGHOST, PGPORT, PGDATABASE   target database (must exist, be empty)
-#   PGSUPERUSER, PGSUPERPASSWORD superuser credentials (bootstrap only)
-# Optional:
-#   MIGRATION_PASSWORD  defaults to 'ci-migration-password'
-#   APP_PASSWORD        defaults to 'ci-app-password'
-#   WORKER_PASSWORD     defaults to 'ci-worker-password'
-#   DDL_DIR             defaults to handbook/30-data/ddl
 # =====================================================================
 set -euo pipefail
 
@@ -26,7 +17,16 @@ MIGRATION_PASSWORD="${MIGRATION_PASSWORD:-ci-migration-password}"
 APP_PASSWORD="${APP_PASSWORD:-ci-app-password}"
 WORKER_PASSWORD="${WORKER_PASSWORD:-ci-worker-password}"
 
-export PGHOST PGPORT PGDATABASE
+PGHOST="${PGHOST:-127.0.0.1}"
+if [ "$PGHOST" = "localhost" ]; then
+  PGHOST="127.0.0.1"
+fi
+PGPORT="${PGPORT:-5432}"
+PGDATABASE="${PGDATABASE:-platform}"
+PGSUPERUSER="${PGSUPERUSER:-postgres}"
+PGSUPERPASSWORD="${PGSUPERPASSWORD:-postgres}"
+
+export PGHOST PGPORT PGDATABASE PGSUPERUSER PGSUPERPASSWORD
 
 # Canonical migration order. Bootstrap runs as superuser; everything
 # else runs as platform_migration (schema owner). Amendments run LAST:
@@ -50,18 +50,27 @@ MIGRATIONS=(
 
 psql_super() { # run a file or -c statement as the superuser
   PGUSER="$PGSUPERUSER" PGPASSWORD="$PGSUPERPASSWORD" \
-    psql -X -v ON_ERROR_STOP=1 "$@"
+    psql -h "$PGHOST" -p "$PGPORT" -d "$PGDATABASE" -X -v ON_ERROR_STOP=1 "$@"
 }
 
 psql_role() { # psql_role <role> <password> <args...>
   local role="$1" pw="$2"; shift 2
-  PGUSER="$role" PGPASSWORD="$pw" psql -X -v ON_ERROR_STOP=1 "$@"
+  PGUSER="$role" PGPASSWORD="$pw" \
+    psql -h "$PGHOST" -p "$PGPORT" -d "$PGDATABASE" -X -v ON_ERROR_STOP=1 "$@"
 }
 
 sql_super() {
   PGUSER="$PGSUPERUSER" PGPASSWORD="$PGSUPERPASSWORD" \
-    psql -X -v ON_ERROR_STOP=1 -Atc "$1"
+    psql -h "$PGHOST" -p "$PGPORT" -d "$PGDATABASE" -X -v ON_ERROR_STOP=1 -Atc "$1"
 }
+
+# Wait for Postgres to be reachable
+for i in {1..30}; do
+  if pg_isready -h "$PGHOST" -p "$PGPORT" -U "$PGSUPERUSER" >/dev/null 2>&1; then
+    break
+  fi
+  sleep 1
+done
 
 echo "== phase 0: bootstrap roles (superuser) =="
 psql_super -f "$DDL_DIR/amendment/0000_bootstrap_roles.sql"
