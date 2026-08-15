@@ -6,9 +6,8 @@
 
 set -euo pipefail
 
-# مسیر پایه
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+# مسیر پایه پروژه (Windows: D:\platform-forge)
+PROJECT_ROOT="/mnt/d/platform-forge"
 AMENDMENTS_FILE="$PROJECT_ROOT/handbook/60-delivery/amendments.yaml"
 
 # پیش‌فرض‌ها

@@ -26,8 +26,8 @@ param(
 $ErrorActionPreference = 'Stop'
 
 # مسیر پایه پروژه
-$ProjectRoot = Split-Path -Parent $PSScriptRoot
-$AmendmentsFile = Join-Path $ProjectRoot "handbook/60-delivery/amendments.yaml"
+$ProjectRoot = "D:\platform-forge"
+$AmendmentsFile = Join-Path $ProjectRoot "handbook\60-delivery\amendments.yaml"
 
 function Write-Amendment-Table {
     param($Amendments)
