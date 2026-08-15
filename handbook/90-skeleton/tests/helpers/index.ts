@@ -86,12 +86,13 @@ export async function createTestPool(): Promise<TestPool> {
 
 /** The migration-owner connection. Used only for fixtures and assertions. */
 export async function createOwnerPool(): Promise<TestPool> {
-  const url = process.env.DATABASE_URL_OWNER ?? process.env.DATABASE_URL;
+  // Use DATABASE_URL_SUPER for owner pool since it has full access
+  const url = process.env.DATABASE_URL_SUPER ?? process.env.DATABASE_URL;
   if (!url) {
     throw new Error(
-      'DATABASE_URL_OWNER environment variable is required for tenant-leak tests.\n' +
+      'DATABASE_URL_SUPER environment variable is required for tenant-leak tests.\n' +
       'Set it in .env file or run:\n' +
-      '  DATABASE_URL_OWNER=postgres://postgres:password@localhost:5432/platform_forge_dev pnpm test:tenant-leak'
+      '  DATABASE_URL_SUPER=postgres://postgres:password@localhost:5432/postgres pnpm test:tenant-leak'
     );
   }
   return wrap(new PgPool({ connectionString: url, max: 5 }));
