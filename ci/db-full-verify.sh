@@ -10,7 +10,6 @@
 #
 # Any failed statement aborts the run (ON_ERROR_STOP).
 # =====================================================================
-set -euo pipefail
 
 DDL_DIR="${DDL_DIR:-handbook/30-data/ddl}"
 MIGRATION_PASSWORD="${MIGRATION_PASSWORD:-ci-migration-password}"
@@ -82,7 +81,10 @@ for i in {1..30}; do
 done
 
 echo "== phase 0: bootstrap roles (superuser) =="
-psql_super -f "$DDL_DIR/amendment/0000_bootstrap_roles.sql"
+if ! psql_super -f "$DDL_DIR/amendment/0000_bootstrap_roles.sql"; then
+  echo "FAILED AT BOOTSTRAP ROLES!"
+  exit 1
+fi
 
 # Ephemeral CI credentials so later steps can log in as each role.
 sql_super "ALTER ROLE platform_migration PASSWORD '$MIGRATION_PASSWORD';"
@@ -92,7 +94,10 @@ sql_super "ALTER ROLE platform_worker    PASSWORD '$WORKER_PASSWORD';"
 echo "== phase 1: applying ${#MIGRATIONS[@]} migrations as platform_migration =="
 for m in "${MIGRATIONS[@]}"; do
   echo "--> Applying migration: $m"
-  psql_role platform_migration "$MIGRATION_PASSWORD" -f "$DDL_DIR/$m"
+  if ! psql_role platform_migration "$MIGRATION_PASSWORD" -f "$DDL_DIR/$m"; then
+    echo "FAILED AT MIGRATION: $m"
+    exit 1
+  fi
 done
 
 VALIDATION_SQL="tests/sql/p-debt-validation.sql"
@@ -101,7 +106,10 @@ if [ ! -f "$VALIDATION_SQL" ]; then
 fi
 
 echo "== phase 2: P-DEBT validation suite (as platform_app) =="
-psql_role platform_app "$APP_PASSWORD" -f "$VALIDATION_SQL"
+if ! psql_role platform_app "$APP_PASSWORD" -f "$VALIDATION_SQL"; then
+  echo "FAILED AT VALIDATION SUITE!"
+  exit 1
+fi
 
 echo "== phase 3: audit assertions =="
 
