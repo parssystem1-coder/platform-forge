@@ -14,34 +14,6 @@ $ErrorActionPreference = 'Stop'
 $ProjectRoot = "D:\pf-work"
 $AmendmentsFile = Join-Path $ProjectRoot "handbook\60-delivery\amendments.yaml"
 
-function Write-Amendment-Table {
-    param($Data)
-    
-    $tableData = @()
-    foreach ($item in $Data) {
-        $statusColor = switch ($item.status) {
-            'completed' { 'Green' }
-            'pending' { 'Yellow' }
-            'in_progress' { 'Cyan' }
-            default { 'White' }
-        }
-        $tableData += [PSCustomObject]@{
-            Sprint = $item.sprint
-            ID = $item.id
-            Title = $item.title
-            Status = $item.status
-            Priority = $item.priority
-        }
-    }
-    
-    $tableData | Format-Table -AutoSize
-}
-
-function Write-Amendment-Json {
-    param($Data)
-    @{ sprints = $Data } | ConvertTo-Json -Depth 10
-}
-
 try {
     Write-Host ""
     Write-Host "=== Amendments List ===" -ForegroundColor Cyan
@@ -60,22 +32,33 @@ try {
     $currentSprint = ""
     $inAmendments = $false
     $currentItem = $null
+    $indentation = 0
     
     foreach ($line in $lines) {
-        # Match sprint name: - name: Sprint X
-        if ($line -match '^\s*-\s*name:\s*(.+)$') {
+        # Skip empty lines
+        if ([string]::IsNullOrWhiteSpace($line)) { continue }
+        
+        # Calculate indentation level
+        $spaces = $line.Length - $line.TrimStart().Length
+        $indentLevel = [Math]::Floor($spaces / 2)
+        
+        # Match sprints section: - name: Sprint X
+        if ($line -match '^\s+-\s+name:\s+(.+)$') {
             $currentSprint = $Matches[1].Trim()
             $inAmendments = $false
+            $indentLevel = 0
         }
-        # Match amendments: section header
-        elseif ($line -match '^\s*amendments:\s*$') {
+        # Match amendments header
+        elseif ($line -match '^\s+amendments:\s*$') {
             $inAmendments = $true
         }
-        # Match amendment: - id: AMEND-XXX
-        elseif ($inAmendments -and $line -match '^\s*-\s*id:\s*(.+)$') {
+        # Match amendment entry: - id: AMEND-XXX
+        elseif ($inAmendments -and $line -match '^\s+-\s+id:\s+([^$]+)$') {
+            # Save previous item
             if ($currentItem) {
                 $results += $currentItem
             }
+            # Start new item
             $currentItem = @{
                 sprint = $currentSprint
                 id = $Matches[1].Trim()
@@ -84,16 +67,16 @@ try {
                 priority = ""
             }
         }
-        # Match title: title: xxx
-        elseif ($currentItem -and $line -match '^\s+title:\s*(.+)$') {
-            $currentItem.title = $Matches[1].Trim() -replace '^["'']|["'']$', ''
+        # Match title (same indent as id)
+        elseif ($currentItem -and $line -match '^\s{4,}title:\s*(.+)$') {
+            $currentItem.title = $Matches[1].Trim()
         }
-        # Match status: status: xxx
-        elseif ($currentItem -and $line -match '^\s+status:\s*(.+)$') {
+        # Match status
+        elseif ($currentItem -and $line -match '^\s{4,}status:\s*(.+)$') {
             $currentItem.status = $Matches[1].Trim()
         }
-        # Match priority: priority: xxx
-        elseif ($currentItem -and $line -match '^\s+priority:\s*(.+)$') {
+        # Match priority
+        elseif ($currentItem -and $line -match '^\s{4,}priority:\s*(.+)$') {
             $currentItem.priority = $Matches[1].Trim()
         }
     }
@@ -108,10 +91,15 @@ try {
         exit 0
     }
     
-    switch ($OutputFormat) {
-        'table' { Write-Amendment-Table $results }
-        'json'  { Write-Amendment-Json $results }
-        'yaml'  { Get-Content $AmendmentsFile -Encoding UTF8 }
+    # Display results
+    foreach ($item in $results) {
+        $statusColor = switch ($item.status) {
+            'completed' { 'Green' }
+            'pending' { 'Yellow' }
+            'in_progress' { 'Cyan' }
+            default { 'White' }
+        }
+        Write-Host ("{0,-24} | {1,-10} | {2,-20} | {3,-11} | {4}" -f $item.sprint, $item.id, $item.title.Substring(0, [Math]::Min(20, $item.title.Length)), $item.status, $item.priority)
     }
     
     $total = $results.Count
