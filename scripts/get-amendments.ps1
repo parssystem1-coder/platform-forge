@@ -1,7 +1,5 @@
 #Requires -Version 5.1
 # Amendments Tracker Script
-# Usage: .\get-amendments.ps1 [-Environment local|staging|production] [-OutputFormat table|json|yaml]
-
 param(
     [Parameter()]
     [ValidateSet('production', 'staging', 'local')]
@@ -25,57 +23,59 @@ if (-not (Test-Path $AmendmentsFile)) {
     exit 0
 }
 
-$content = Get-Content $AmendmentsFile -Raw -Encoding UTF8
-$allLines = $content -split "`r?`n"
-
+$lines = Get-Content $AmendmentsFile -Encoding UTF8
 $results = @()
 $currentSprint = ""
-$currentItem = $null
+$currentId = ""
+$currentTitle = ""
+$currentStatus = ""
+$currentPriority = ""
 
-foreach ($line in $allLines) {
-    $cleanLine = $line.TrimEnd()
-    if ([string]::IsNullOrWhiteSpace($cleanLine)) { continue }
-    
-    $spaces = 0
-    for ($i = 0; $i -lt $cleanLine.Length; $i++) {
-        if ($cleanLine[$i] -eq ' ') { $spaces++ } else { break }
+foreach ($line in $lines) {
+    # Sprint name
+    if ($line -match '^\s+-\s+name:\s+(.+)') {
+        $currentSprint = $Matches[1].Trim()
     }
-    
-    $trimmed = $cleanLine.Trim()
-    
-    # Sprint name: "  - name:"
-    if ($spaces -eq 2 -and $trimmed.StartsWith("- name:")) {
-        $currentSprint = $trimmed.Substring(7).Trim()
-    }
-    # Amendment id: "      - id:"
-    elseif ($spaces -eq 6 -and $trimmed.StartsWith("- id:")) {
-        if ($null -ne $currentItem) {
-            $results += $currentItem
+    # Amendment id
+    if ($line -match '^\s+-\s+id:\s+(\S+)') {
+        # Save previous
+        if ($currentId -ne "") {
+            $results = $results + @(@{
+                sprint = $currentSprint
+                id = $currentId
+                title = $currentTitle
+                status = $currentStatus
+                priority = $currentPriority
+            })
         }
-        $currentItem = @{
-            sprint = $currentSprint
-            id = $trimmed.Substring(5).Trim()
-            title = ""
-            status = ""
-            priority = ""
-        }
+        $currentId = $Matches[1]
+        $currentTitle = ""
+        $currentStatus = ""
+        $currentPriority = ""
     }
     # Title
-    elseif ($spaces -eq 8 -and $trimmed.StartsWith("title:")) {
-        $currentItem.title = $trimmed.Substring(6).Trim()
+    if ($line -match '^\s+title:\s+(.+)') {
+        $currentTitle = $Matches[1].Trim()
     }
     # Status
-    elseif ($spaces -eq 8 -and $trimmed.StartsWith("status:")) {
-        $currentItem.status = $trimmed.Substring(7).Trim()
+    if ($line -match '^\s+status:\s+(\S+)') {
+        $currentStatus = $Matches[1]
     }
     # Priority
-    elseif ($spaces -eq 8 -and $trimmed.StartsWith("priority:")) {
-        $currentItem.priority = $trimmed.Substring(9).Trim()
+    if ($line -match '^\s+priority:\s+(\S+)') {
+        $currentPriority = $Matches[1]
     }
 }
 
-if ($null -ne $currentItem) {
-    $results += $currentItem
+# Save last item
+if ($currentId -ne "") {
+    $results = $results + @(@{
+        sprint = $currentSprint
+        id = $currentId
+        title = $currentTitle
+        status = $currentStatus
+        priority = $currentPriority
+    })
 }
 
 if ($results.Count -eq 0) {
@@ -83,24 +83,28 @@ if ($results.Count -eq 0) {
     exit 0
 }
 
+# Display
 foreach ($item in $results) {
     $titleDisplay = if ($item.title.Length -gt 18) { $item.title.Substring(0, 15) + "..." } else { $item.title }
-    $statusDisplay = switch ($item.status) {
-        'completed' { "completed" }
-        'pending' { "pending" }
-        'in_progress' { "in_progress" }
-        default { $item.status }
-    }
-    Write-Host ("{0,-24} | {1,-10} | {2,-21} | {3,-11} | {4}" -f $item.sprint, $item.id, $titleDisplay, $statusDisplay, $item.priority)
+    Write-Host ("{0,-24} | {1,-10} | {2,-21} | {3,-11} | {4}" -f $item.sprint, $item.id, $titleDisplay, $item.status, $item.priority)
 }
 
+# Count explicitly
 $total = $results.Count
-$completed = ($results | Where-Object { $_.status -eq 'completed' }).Count
-$pending = $total - $completed
+$compCount = 0
+$pendCount = 0
+foreach ($r in $results) {
+    if ($r.status -eq "completed") {
+        $compCount = $compCount + 1
+    }
+    if ($r.status -eq "pending") {
+        $pendCount = $pendCount + 1
+    }
+}
 
 Write-Host ""
 Write-Host "--- Summary ---" -ForegroundColor Cyan
 Write-Host "Total: $total"
-Write-Host "Completed: $completed" -ForegroundColor Green
-Write-Host "Pending: $pending" -ForegroundColor Yellow
+Write-Host "Completed: $compCount" -ForegroundColor Green
+Write-Host "Pending: $pendCount" -ForegroundColor Yellow
 Write-Host ""
