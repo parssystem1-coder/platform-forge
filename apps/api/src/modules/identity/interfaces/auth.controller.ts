@@ -3,6 +3,11 @@ import type { RegisterUserUseCase } from '../application/register-user.use-case.
 import type { LoginUserUseCase } from '../application/login-user.use-case.js';
 import type { VerifyEmailUseCase } from '../application/verify-email.use-case.js';
 import type { RefreshTokenUseCase } from '../application/refresh-token.use-case.js';
+import type { LogoutUseCase } from '../application/logout.use-case.js';
+import type { RequestPasswordResetUseCase } from '../application/request-password-reset.use-case.js';
+import type { ResetPasswordUseCase } from '../application/reset-password.use-case.js';
+import type { EnableMfaUseCase } from '../application/enable-mfa.use-case.js';
+import type { VerifyMfaUseCase } from '../application/verify-mfa.use-case.js';
 import type { RegisterRequest, LoginRequest } from '@platform/contracts';
 
 export interface AuthControllerOptions {
@@ -10,6 +15,11 @@ export interface AuthControllerOptions {
   loginUseCase: LoginUserUseCase;
   verifyEmailUseCase: VerifyEmailUseCase;
   refreshTokenUseCase: RefreshTokenUseCase;
+  logoutUseCase: LogoutUseCase;
+  requestPasswordResetUseCase: RequestPasswordResetUseCase;
+  resetPasswordUseCase: ResetPasswordUseCase;
+  enableMfaUseCase: EnableMfaUseCase;
+  verifyMfaUseCase: VerifyMfaUseCase;
 }
 
 export const authRoutes: FastifyPluginAsync<AuthControllerOptions> = async (fastify, opts) => {
@@ -103,5 +113,121 @@ export const authRoutes: FastifyPluginAsync<AuthControllerOptions> = async (fast
     });
 
     return reply.status(200).send(response);
+  });
+
+  // 5. POST /api/v1/auth/logout
+  fastify.post('/api/v1/auth/logout', async (request, reply) => {
+    // Get user ID from access token (set by auth middleware)
+    const userId = (request as any).user?.userId;
+    if (!userId) {
+      return reply.status(401).send({
+        type: 'https://errors.platform.example/auth.unauthorized',
+        title: 'Unauthorized',
+        status: 401,
+        code: 'auth.unauthorized',
+        detail: 'Valid Bearer token required',
+      });
+    }
+
+    const refreshToken = request.cookies['platform_refresh_token'];
+    const allDevices = (request.body as { allDevices?: boolean })?.allDevices ?? false;
+
+    await opts.logoutUseCase.execute(userId, refreshToken, { allDevices });
+
+    // Clear refresh token cookie
+    reply.clearCookie('platform_refresh_token', { path: '/api/v1/auth' });
+
+    return reply.status(204).send();
+  });
+
+  // 6. POST /api/v1/auth/request-password-reset
+  fastify.post<{ Body: { email: string } }>('/api/v1/auth/request-password-reset', async (request, reply) => {
+    const { email } = request.body || {};
+    if (!email) {
+      return reply.status(422).send({
+        type: 'https://errors.platform.example/validation.invalid_input',
+        title: 'Validation Failed',
+        status: 422,
+        code: 'validation.invalid_input',
+        detail: 'email is required',
+      });
+    }
+
+    // Always return 200 to prevent email enumeration
+    await opts.requestPasswordResetUseCase.execute(email);
+    return reply.status(200).send({ message: 'If an account exists with this email, a password reset link has been sent.' });
+  });
+
+  // 7. POST /api/v1/auth/reset-password
+  fastify.post<{ Body: { token: string; newPassword: string } }>('/api/v1/auth/reset-password', async (request, reply) => {
+    const { token, newPassword } = request.body || {};
+    if (!token || !newPassword) {
+      return reply.status(422).send({
+        type: 'https://errors.platform.example/validation.invalid_input',
+        title: 'Validation Failed',
+        status: 422,
+        code: 'validation.invalid_input',
+        detail: 'token and newPassword are required',
+      });
+    }
+
+    // Basic password strength check
+    if (newPassword.length < 8) {
+      return reply.status(422).send({
+        type: 'https://errors.platform.example/identity.weak_password',
+        title: 'Weak Password',
+        status: 422,
+        code: 'identity.weak_password',
+        detail: 'Password must be at least 8 characters',
+      });
+    }
+
+    await opts.resetPasswordUseCase.execute(token, newPassword);
+    return reply.status(204).send();
+  });
+
+  // 8. POST /api/v1/auth/mfa/enable
+  fastify.post('/api/v1/auth/mfa/enable', async (request, reply) => {
+    const userId = (request as any).user?.userId;
+    if (!userId) {
+      return reply.status(401).send({
+        type: 'https://errors.platform.example/auth.unauthorized',
+        title: 'Unauthorized',
+        status: 401,
+        code: 'auth.unauthorized',
+        detail: 'Valid Bearer token required',
+      });
+    }
+
+    const result = await opts.enableMfaUseCase.execute(userId);
+    return reply.status(200).send(result);
+  });
+
+  // 9. POST /api/v1/auth/mfa/verify
+  fastify.post<{ Body: { code: string } }>('/api/v1/auth/mfa/verify', async (request, reply) => {
+    const userId = (request as any).user?.userId;
+    if (!userId) {
+      return reply.status(401).send({
+        type: 'https://errors.platform.example/auth.unauthorized',
+        title: 'Unauthorized',
+        status: 401,
+        code: 'auth.unauthorized',
+        detail: 'Valid Bearer token required',
+      });
+    }
+
+    const { code } = request.body || {};
+    if (!code) {
+      return reply.status(422).send({
+        type: 'https://errors.platform.example/validation.invalid_input',
+        title: 'Validation Failed',
+        status: 422,
+        code: 'validation.invalid_input',
+        detail: 'code is required',
+      });
+    }
+
+    const result = await opts.verifyMfaUseCase.execute(userId, code);
+    return reply.status(200).send(result);
   });
 };

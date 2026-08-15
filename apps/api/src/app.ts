@@ -8,7 +8,7 @@ import { problemDetailsErrorHandler } from './common/problem-details.js';
 import { healthRoutes } from './routes/health.js';
 import { UnitOfWork } from './kernel/unit-of-work.js';
 import { QuotaService } from './kernel/quota-service.js';
-import { CryptoPasswordHasher, CryptoTokenService, RegisterUserUseCase, LoginUserUseCase, VerifyEmailUseCase, RefreshTokenUseCase, authRoutes } from './modules/identity/index.js';
+import { CryptoPasswordHasher, CryptoTokenService, RegisterUserUseCase, LoginUserUseCase, VerifyEmailUseCase, RefreshTokenUseCase, LogoutUseCase, RequestPasswordResetUseCase, ResetPasswordUseCase, EnableMfaUseCase, VerifyMfaUseCase, authRoutes } from './modules/identity/index.js';
 import { ListUserTenantsUseCase, SwitchTenantUseCase, tenantsRoutes } from './modules/tenancy/index.js';
 import { CreateProductUseCase, ListProductsUseCase, GetProductUseCase, CreateCartUseCase, AddItemToCartUseCase, CreateOrderFromCartUseCase, GetOrderUseCase, commerceRoutes } from './modules/commerce/index.js';
 
@@ -91,12 +91,22 @@ export async function createApp(opts: CreateAppOptions = {}): Promise<FastifyIns
   const loginUseCase = new LoginUserUseCase(uow, hasher, tokenService);
   const verifyEmailUseCase = new VerifyEmailUseCase(uow, tokenService);
   const refreshTokenUseCase = new RefreshTokenUseCase(uow, tokenService);
+  const logoutUseCase = new LogoutUseCase(uow, tokenService);
+  const requestPasswordResetUseCase = new RequestPasswordResetUseCase(uow, tokenService);
+  const resetPasswordUseCase = new ResetPasswordUseCase(uow, hasher, tokenService);
+  const enableMfaUseCase = new EnableMfaUseCase(uow, tokenService);
+  const verifyMfaUseCase = new VerifyMfaUseCase(uow, tokenService);
 
   await app.register(authRoutes, {
     registerUseCase,
     loginUseCase,
     verifyEmailUseCase,
     refreshTokenUseCase,
+    logoutUseCase,
+    requestPasswordResetUseCase,
+    resetPasswordUseCase,
+    enableMfaUseCase,
+    verifyMfaUseCase,
   });
 
   // Tenancy Module

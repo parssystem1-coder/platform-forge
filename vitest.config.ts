@@ -33,7 +33,13 @@ loadTestEnv();
 
 export default defineConfig({
   test: {
-    include: ['tests/**/*.spec.ts', 'handbook/90-skeleton/tests/**/*.spec.ts'],
+    include: [
+      'tests/**/*.spec.ts',
+      'handbook/90-skeleton/tests/**/*.spec.ts',
+      'apps/api/src/**/*.spec.ts',
+      'apps/worker/src/**/*.spec.ts',
+      'packages/database/src/**/*.spec.ts',
+    ],
     pool: 'forks',
   },
 });
