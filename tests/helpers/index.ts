@@ -111,8 +111,8 @@ export async function seedTenant(ownerPool: TestPool, slug: string): Promise<str
 
   await ownerPool.transaction(async (tx) => {
     await tx.query(
-      `insert into tenants (id, slug, name, status, created_at, updated_at)
-       values ($1, $2, $3, 'active', now(), now())
+      `insert into tenants (id, slug, name, locale, timezone, currency, status, created_at, updated_at)
+       values ($1, $2, $3, 'en-US', 'UTC', 'USD', 'active', now(), now())
        on conflict (slug) do update set updated_at = now()`,
       [tenantId, slug, slug],
     );
