@@ -9,107 +9,111 @@ param(
     [string]$OutputFormat = 'table'
 )
 
-$ErrorActionPreference = 'Stop'
-
 $ProjectRoot = "D:\pf-work"
 $AmendmentsFile = Join-Path $ProjectRoot "handbook\60-delivery\amendments.yaml"
 
-try {
-    Write-Host ""
-    Write-Host "=== Amendments List ===" -ForegroundColor Cyan
-    Write-Host "Environment: $Environment"
-    Write-Host ""
-    
-    if (-not (Test-Path $AmendmentsFile)) {
-        Write-Host "WARNING: amendments.yaml not found at $AmendmentsFile" -ForegroundColor Yellow
-        exit 0
-    }
-    
-    $lines = Get-Content $AmendmentsFile -Encoding UTF8
-    
-    $results = @()
-    $currentSprint = ""
-    $currentItem = $null
-    
-    foreach ($line in $lines) {
-        # Trim the line for easier matching
-        $trimmed = $line.TrimStart()
-        $leadingSpaces = $line.Length - $trimmed.Length
-        
-        # Skip empty lines
-        if ([string]::IsNullOrWhiteSpace($line)) { continue }
-        
-        # Match sprint name: "  - name: xxx"
-        if ($leadingSpaces -eq 2 -and $trimmed.StartsWith("- name:")) {
-            $currentSprint = $trimmed.Substring(7).Trim()
-            $currentItem = $null
-        }
-        # Match amendment id: "      - id: xxx"
-        elseif ($leadingSpaces -eq 6 -and $trimmed.StartsWith("- id:")) {
-            # Save previous item
-            if ($currentItem) {
-                $results += $currentItem
-            }
-            # Start new item
-            $currentItem = @{
-                sprint = $currentSprint
-                id = $trimmed.Substring(5).Trim()
-                title = ""
-                status = ""
-                priority = ""
-            }
-        }
-        # Match title: "        title: xxx"
-        elseif ($leadingSpaces -eq 8 -and $currentItem -and $trimmed.StartsWith("title:")) {
-            $currentItem.title = $trimmed.Substring(6).Trim()
-        }
-        # Match status: "        status: xxx"
-        elseif ($leadingSpaces -eq 8 -and $currentItem -and $trimmed.StartsWith("status:")) {
-            $currentItem.status = $trimmed.Substring(7).Trim()
-        }
-        # Match priority: "        priority: xxx"
-        elseif ($leadingSpaces -eq 8 -and $currentItem -and $trimmed.StartsWith("priority:")) {
-            $currentItem.priority = $trimmed.Substring(9).Trim()
-        }
-    }
-    
-    # Add last item
-    if ($currentItem) {
-        $results += $currentItem
-    }
-    
-    if ($results.Count -eq 0) {
-        Write-Host "No amendments found" -ForegroundColor Yellow
-        exit 0
-    }
-    
-    # Display results
-    foreach ($item in $results) {
-        $statusDisplay = switch ($item.status) {
-            'completed' { "completed" }
-            'pending' { "pending" }
-            'in_progress' { "in_progress" }
-            default { $item.status }
-        }
-        
-        # Truncate title if too long
-        $titleDisplay = if ($item.title.Length -gt 20) { $item.title.Substring(0, 17) + "..." } else { $item.title }
-        
-        Write-Host ("{0,-24} | {1,-10} | {2,-22} | {3,-11} | {4}" -f $item.sprint, $item.id, $titleDisplay, $statusDisplay, $item.priority)
-    }
-    
-    $total = $results.Count
-    $completed = ($results | Where-Object { $_.status -eq 'completed' }).Count
-    $pending = $total - $completed
-    
-    Write-Host ""
-    Write-Host "--- Summary ---" -ForegroundColor Cyan
-    Write-Host "Total: $total"
-    Write-Host "Completed: $completed" -ForegroundColor Green
-    Write-Host "Pending: $pending" -ForegroundColor Yellow
-    
-} catch {
-    Write-Host ""
-    Write-Host "ERROR: $_" -ForegroundColor Red
-    exit 1
+Write-Host ""
+Write-Host "=== Amendments List ===" -ForegroundColor Cyan
+Write-Host "Environment: $Environment"
+Write-Host ""
+
+if (-not (Test-Path $AmendmentsFile)) {
+    Write-Host "WARNING: amendments.yaml not found at $AmendmentsFile" -ForegroundColor Yellow
+    exit 0
 }
+
+# Read file
+$content = Get-Content $AmendmentsFile -Raw -Encoding UTF8
+$allLines = $content -split "`r?`n"
+
+$results = @()
+$currentSprint = ""
+$currentItem = $null
+$debugMode = $false  # Set to $true for debugging
+
+foreach ($line in $allLines) {
+    $cleanLine = $line.TrimEnd()
+    
+    # Skip empty lines
+    if ([string]::IsNullOrWhiteSpace($cleanLine)) { continue }
+    
+    # Calculate leading spaces
+    $spaces = 0
+    for ($i = 0; $i -lt $cleanLine.Length; $i++) {
+        if ($cleanLine[$i] -eq ' ') { $spaces++ } else { break }
+    }
+    
+    $trimmed = $cleanLine.Trim()
+    
+    # Sprint name: "  - name:"
+    if ($spaces -eq 2 -and $trimmed.StartsWith("- name:")) {
+        $currentSprint = $trimmed.Substring(7).Trim()
+        if ($debugMode) { Write-Host "[DEBUG] Sprint: $currentSprint" -ForegroundColor Gray }
+    }
+    # Amendment id: "      - id:"
+    elseif ($spaces -eq 6 -and $trimmed.StartsWith("- id:")) {
+        # Save previous
+        if ($null -ne $currentItem) {
+            $results += $currentItem
+            if ($debugMode) { Write-Host "[DEBUG] Added: $($currentItem.id) status=$($currentItem.status)" -ForegroundColor Gray }
+        }
+        # New item
+        $currentItem = @{
+            sprint = $currentSprint
+            id = $trimmed.Substring(5).Trim()
+            title = ""
+            status = ""
+            priority = ""
+        }
+    }
+    # Title
+    elseif ($spaces -eq 8 -and $trimmed.StartsWith("title:")) {
+        $currentItem.title = $trimmed.Substring(6).Trim()
+    }
+    # Status
+    elseif ($spaces -eq 8 -and $trimmed.StartsWith("status:")) {
+        $statusVal = $trimmed.Substring(7).Trim()
+        $currentItem.status = $statusVal
+        if ($debugMode) { Write-Host "[DEBUG] Status for $($currentItem.id): '$statusVal'" -ForegroundColor Gray }
+    }
+    # Priority
+    elseif ($spaces -eq 8 -and $trimmed.StartsWith("priority:")) {
+        $currentItem.priority = $trimmed.Substring(9).Trim()
+    }
+}
+
+# Add last item
+if ($null -ne $currentItem) {
+    $results += $currentItem
+    if ($debugMode) { Write-Host "[DEBUG] Added last: $($currentItem.id) status=$($currentItem.status)" -ForegroundColor Gray }
+}
+
+if ($results.Count -eq 0) {
+    Write-Host "No amendments found" -ForegroundColor Yellow
+    exit 0
+}
+
+# Display
+foreach ($item in $results) {
+    $titleDisplay = if ($item.title.Length -gt 18) { $item.title.Substring(0, 15) + "..." } else { $item.title }
+    Write-Host ("{0,-24} | {1,-10} | {2,-21} | {3,-11} | {4}" -f $item.sprint, $item.id, $titleDisplay, $item.status, $item.priority)
+}
+
+# Count by exact status value
+$total = $results.Count
+$completed = 0
+$pending = 0
+
+foreach ($item in $results) {
+    if ($item.status -eq "completed") {
+        $completed++
+    } else {
+        $pending++
+    }
+}
+
+Write-Host ""
+Write-Host "--- Summary ---" -ForegroundColor Cyan
+Write-Host "Total: $total"
+Write-Host "Completed: $completed" -ForegroundColor Green
+Write-Host "Pending: $pending" -ForegroundColor Yellow
