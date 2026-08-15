@@ -61,7 +61,37 @@ staging باید تا حد ممکن production-like باشد، مخصوصاً د
 ## 13.6 Release quality gates
 
 برای release شدن staging/prod:
+
 - verify سبز
 - migration review approved
 - security-sensitive diff reviewed by second engineer
 - rollback plan documented if auth/session touched
+
+---
+
+## 13.7 وضعیت پیاده‌سازی
+
+> به‌روزرسانی 2026-08-15 — این بخش دیگر SPEC نیست. Pipeline زیر در مخزن وجود دارد و روی هر push به `main` و هر PR اجرا می‌شود: `.github/workflows/verify.yml`.
+
+سه job:
+
+1. **docs** — lint کل `handbook/**/*.md` با markdownlint (کانفیگ: `.markdownlint.jsonc` در ریشه مخزن).
+2. **contracts** — اعتبارسنجی `70-contracts/openapi.yaml` با Redocly؛ هر error باعث شکست job می‌شود.
+3. **data / full migration chain** — پوش کامل داده روی PostgreSQL 16 تازه:
+   - `ci/db-full-verify.sh` ابتدا `amendment/0000_bootstrap_roles.sql` را با superuser اجرا می‌کند (نقش‌ها، مالکیت schema، default privileges).
+   - سپس همه migrationهای phase و amendment را به ترتیب مرجع با نقش `platform_migration` اعمال می‌کند.
+   - suite اعتبارسنجی P-DEBT (`90-skeleton/tests/sql/p-debt-validation.sql`) با نقش غیرقابل‌اعتماد `platform_app` اجرا می‌شود.
+   - در پایان سه invariant حسابرسی و assert می‌شود:
+     - هیچ نقش اجرایی (`platform_app`، `platform_worker`، `platform_readonly`) `BYPASSRLS` یا superuser ندارد.
+     - همه جدول‌های schema `public` متعلق به `platform_migration` هستند.
+     - هر جدول tenant-bound هم `ENABLE` و هم `FORCE ROW LEVEL SECURITY` دارد.
+
+هر statement با `ON_ERROR_STOP=1` اجرا می‌شود؛ هر شکست، pipeline را قرمز می‌کند.
+
+اجرای محلی روی هر Postgres خالی:
+
+```bash
+PGHOST=localhost PGPORT=5432 PGDATABASE=platform \
+PGSUPERUSER=postgres PGSUPERPASSWORD=*** \
+bash ci/db-full-verify.sh
+```
