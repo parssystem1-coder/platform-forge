@@ -18,6 +18,36 @@ plus a CI gate that verifies the **entire data chain** on every push and PR.
 | `.github/workflows/verify.yml` | The CI/CD gate (docs, contracts, full data chain) |
 | `ci/db-full-verify.sh` | Full-push data verification: applies every migration to a fresh Postgres 16 and audits role/ownership/RLS invariants |
 
+## Quick Start (Local Development)
+
+### 1. Copy environment file
+
+```bash
+cp .env.example .env
+# Edit .env and set your DATABASE_URL_SUPER password
+```
+
+### 2. Start infrastructure
+
+```bash
+pnpm infra:up
+```
+
+### 3. Setup database (creates roles, runs all migrations)
+
+```bash
+pnpm db:setup
+```
+
+### 4. Run tenant-leak tests
+
+```bash
+pnpm test:tenant-leak
+```
+
+> **Windows/MINGW64 users**: The new `db:setup` script uses pure Node.js and doesn't depend on `psql`.
+> If you encounter psql issues, use `node scripts/db-setup.mjs` instead.
+
 ## CI: full-push data verification
 
 Every push to `main` and every pull request runs three jobs:

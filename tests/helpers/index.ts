@@ -12,6 +12,26 @@
 import pg from 'pg';
 const { Pool: PgPool } = pg;
 import { randomUUID } from 'node:crypto';
+import { existsSync, readFileSync } from 'node:fs';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+/** Load .env file if exists */
+function loadEnv() {
+  const envPath = resolve(dirname(fileURLToPath(import.meta.url)), '../../.env');
+  if (existsSync(envPath)) {
+    const envContent = readFileSync(envPath, 'utf-8');
+    for (const line of envContent.split('\n')) {
+      const match = line.match(/^([^=]+)=(.*)$/);
+      if (match && !process.env[match[1]]) {
+        process.env[match[1]] = match[2].trim();
+      }
+    }
+  }
+}
+
+// Load env at module initialization
+loadEnv();
 
 export interface TestTx {
   query<T = unknown>(sql: string, params?: unknown[]): Promise<T[]>;
@@ -51,14 +71,26 @@ function wrap(pool: pg.Pool): TestPool {
 /** The application connection. NOBYPASSRLS, owns nothing. */
 export async function createTestPool(): Promise<TestPool> {
   const url = process.env.DATABASE_URL_APP ?? process.env.DATABASE_URL;
-  if (!url) throw new Error('DATABASE_URL_APP is required for integration tests');
+  if (!url) {
+    throw new Error(
+      'DATABASE_URL_APP environment variable is required for tenant-leak tests.\n' +
+      'Set it in .env file or run:\n' +
+      '  DATABASE_URL_APP=postgres://platform_app:password@localhost:5432/platform_forge_dev pnpm test:tenant-leak'
+    );
+  }
   return wrap(new PgPool({ connectionString: url, max: 5 }));
 }
 
 /** The migration-owner connection. Used only for fixtures and assertions. */
 export async function createOwnerPool(): Promise<TestPool> {
   const url = process.env.DATABASE_URL_OWNER ?? process.env.DATABASE_URL;
-  if (!url) throw new Error('DATABASE_URL_OWNER is required for integration tests');
+  if (!url) {
+    throw new Error(
+      'DATABASE_URL_OWNER environment variable is required for tenant-leak tests.\n' +
+      'Set it in .env file or run:\n' +
+      '  DATABASE_URL_OWNER=postgres://postgres:password@localhost:5432/platform_forge_dev pnpm test:tenant-leak'
+    );
+  }
   return wrap(new PgPool({ connectionString: url, max: 5 }));
 }
 
