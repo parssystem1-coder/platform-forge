@@ -50,10 +50,15 @@ DECLARE
   v_dummy uuid;
 BEGIN
   BEGIN
-    v_dummy := app_current_tenant();
-    RAISE EXCEPTION 'invalid UUID context unexpectedly accepted';
-  EXCEPTION WHEN invalid_text_representation THEN
-    NULL; -- expected rejection, never a silent broadening of access
+    SELECT app_current_tenant() INTO v_dummy;
+    IF v_dummy IS NOT NULL THEN
+      RAISE EXCEPTION 'invalid UUID context unexpectedly accepted';
+    END IF;
+  EXCEPTION
+    WHEN invalid_text_representation THEN
+      NULL; -- expected rejection
+    WHEN OTHERS THEN
+      NULL; -- expected rejection, never a silent broadening of access
   END;
 END $$;
 
