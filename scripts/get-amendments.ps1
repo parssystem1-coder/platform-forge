@@ -1,4 +1,7 @@
 #Requires -Version 5.1
+# Amendments Tracker Script
+# Usage: .\get-amendments.ps1 [-Environment local|staging|production] [-OutputFormat table|json|yaml]
+
 param(
     [Parameter()]
     [ValidateSet('production', 'staging', 'local')]
@@ -22,22 +25,17 @@ if (-not (Test-Path $AmendmentsFile)) {
     exit 0
 }
 
-# Read file
 $content = Get-Content $AmendmentsFile -Raw -Encoding UTF8
 $allLines = $content -split "`r?`n"
 
 $results = @()
 $currentSprint = ""
 $currentItem = $null
-$debugMode = $false  # Set to $true for debugging
 
 foreach ($line in $allLines) {
     $cleanLine = $line.TrimEnd()
-    
-    # Skip empty lines
     if ([string]::IsNullOrWhiteSpace($cleanLine)) { continue }
     
-    # Calculate leading spaces
     $spaces = 0
     for ($i = 0; $i -lt $cleanLine.Length; $i++) {
         if ($cleanLine[$i] -eq ' ') { $spaces++ } else { break }
@@ -48,16 +46,12 @@ foreach ($line in $allLines) {
     # Sprint name: "  - name:"
     if ($spaces -eq 2 -and $trimmed.StartsWith("- name:")) {
         $currentSprint = $trimmed.Substring(7).Trim()
-        if ($debugMode) { Write-Host "[DEBUG] Sprint: $currentSprint" -ForegroundColor Gray }
     }
     # Amendment id: "      - id:"
     elseif ($spaces -eq 6 -and $trimmed.StartsWith("- id:")) {
-        # Save previous
         if ($null -ne $currentItem) {
             $results += $currentItem
-            if ($debugMode) { Write-Host "[DEBUG] Added: $($currentItem.id) status=$($currentItem.status)" -ForegroundColor Gray }
         }
-        # New item
         $currentItem = @{
             sprint = $currentSprint
             id = $trimmed.Substring(5).Trim()
@@ -72,9 +66,7 @@ foreach ($line in $allLines) {
     }
     # Status
     elseif ($spaces -eq 8 -and $trimmed.StartsWith("status:")) {
-        $statusVal = $trimmed.Substring(7).Trim()
-        $currentItem.status = $statusVal
-        if ($debugMode) { Write-Host "[DEBUG] Status for $($currentItem.id): '$statusVal'" -ForegroundColor Gray }
+        $currentItem.status = $trimmed.Substring(7).Trim()
     }
     # Priority
     elseif ($spaces -eq 8 -and $trimmed.StartsWith("priority:")) {
@@ -82,10 +74,8 @@ foreach ($line in $allLines) {
     }
 }
 
-# Add last item
 if ($null -ne $currentItem) {
     $results += $currentItem
-    if ($debugMode) { Write-Host "[DEBUG] Added last: $($currentItem.id) status=$($currentItem.status)" -ForegroundColor Gray }
 }
 
 if ($results.Count -eq 0) {
@@ -93,27 +83,24 @@ if ($results.Count -eq 0) {
     exit 0
 }
 
-# Display
 foreach ($item in $results) {
     $titleDisplay = if ($item.title.Length -gt 18) { $item.title.Substring(0, 15) + "..." } else { $item.title }
-    Write-Host ("{0,-24} | {1,-10} | {2,-21} | {3,-11} | {4}" -f $item.sprint, $item.id, $titleDisplay, $item.status, $item.priority)
-}
-
-# Count by exact status value
-$total = $results.Count
-$completed = 0
-$pending = 0
-
-foreach ($item in $results) {
-    if ($item.status -eq "completed") {
-        $completed++
-    } else {
-        $pending++
+    $statusDisplay = switch ($item.status) {
+        'completed' { "completed" }
+        'pending' { "pending" }
+        'in_progress' { "in_progress" }
+        default { $item.status }
     }
+    Write-Host ("{0,-24} | {1,-10} | {2,-21} | {3,-11} | {4}" -f $item.sprint, $item.id, $titleDisplay, $statusDisplay, $item.priority)
 }
+
+$total = $results.Count
+$completed = ($results | Where-Object { $_.status -eq 'completed' }).Count
+$pending = $total - $completed
 
 Write-Host ""
 Write-Host "--- Summary ---" -ForegroundColor Cyan
 Write-Host "Total: $total"
 Write-Host "Completed: $completed" -ForegroundColor Green
 Write-Host "Pending: $pending" -ForegroundColor Yellow
+Write-Host ""
