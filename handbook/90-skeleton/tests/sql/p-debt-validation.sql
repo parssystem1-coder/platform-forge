@@ -46,9 +46,11 @@ SELECT app_current_tenant();
 
 SELECT set_config('app.tenant_id', 'not-a-uuid', true);
 DO $$
+DECLARE
+  v_dummy uuid;
 BEGIN
   BEGIN
-    PERFORM app_current_tenant();
+    v_dummy := app_current_tenant();
     RAISE EXCEPTION 'invalid UUID context unexpectedly accepted';
   EXCEPTION WHEN invalid_text_representation THEN
     NULL; -- expected rejection, never a silent broadening of access
