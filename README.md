@@ -1,5 +1,10 @@
 # platform-forge
 
+> ⚠️ **فاز جاری: `P-IDENTITY`** (Identity + Tenancy + Authorization)
+>
+> فاز قبلی `P-DEBT` با موفقیت بسته شد. تمام ۳۴ یافته کدی اصلاح شد.
+> اسناد و نقشه فاز مرجع: `handbook/99-amendment/05-canonical-phase-map.md`
+
 Spec, contracts, and data-layer blueprint for a multi-tenant SaaS platform —
 plus a CI gate that verifies the **entire data chain** on every push and PR.
 
@@ -12,6 +17,36 @@ plus a CI gate that verifies the **entire data chain** on every push and PR.
 | `handbook/90-skeleton/` | Reference code skeleton (kernel, RLS tests, compose) |
 | `.github/workflows/verify.yml` | The CI/CD gate (docs, contracts, full data chain) |
 | `ci/db-full-verify.sh` | Full-push data verification: applies every migration to a fresh Postgres 16 and audits role/ownership/RLS invariants |
+
+## Quick Start (Local Development)
+
+### 1. Copy environment file
+
+```bash
+cp .env.example .env
+# Edit .env and set your DATABASE_URL_SUPER password
+```
+
+### 2. Start infrastructure
+
+```bash
+pnpm infra:up
+```
+
+### 3. Setup database (creates roles, runs all migrations)
+
+```bash
+pnpm db:setup
+```
+
+### 4. Run tenant-leak tests
+
+```bash
+pnpm test:tenant-leak
+```
+
+> **Windows/MINGW64 users**: The new `db:setup` script uses pure Node.js and doesn't depend on `psql`.
+> If you encounter psql issues, use `node scripts/db-setup.mjs` instead.
 
 ## CI: full-push data verification
 

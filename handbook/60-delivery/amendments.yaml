@@ -1,0 +1,31 @@
+sprints:
+  - name: Sprint 3 (P-IDENTITY)
+    amendments:
+      - id: AMEND-001
+        title: افزودن MFA با TOTP
+        status: completed
+        priority: P1
+        description: پیاده‌سازی احراز هویت چندعاملی با استفاده از otplib
+      - id: AMEND-002
+        title: بهبود backup codes
+        status: pending
+        priority: P2
+        description: افزودن قابلیت تولید و تأیید backup codes
+      - id: AMEND-003
+        title: تست MFA flow
+        status: pending
+        priority: P1
+        description: نوشتن تست‌های واحد برای MFA
+
+  - name: Sprint 4 (Tenancy)
+    amendments:
+      - id: AMEND-004
+        title: ایجاد tenant جدید
+        status: pending
+        priority: P0
+        description: پیاده‌سازی use case ایجاد tenant
+      - id: AMEND-005
+        title: مدیریت membership
+        status: pending
+        priority: P1
+        description: افزودن و حذف اعضای tenant

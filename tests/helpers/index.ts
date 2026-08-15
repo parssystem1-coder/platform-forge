@@ -12,6 +12,30 @@
 import pg from 'pg';
 const { Pool: PgPool } = pg;
 import { randomUUID } from 'node:crypto';
+import { existsSync, readFileSync } from 'node:fs';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+/** Load .env file if exists - use process.cwd() for cross-platform compatibility */
+function loadEnv() {
+  const envPath = resolve(process.cwd(), '.env');
+  if (existsSync(envPath)) {
+    const envContent = readFileSync(envPath, 'utf-8');
+    for (const line of envContent.split('\n')) {
+      const match = line.match(/^([^=]+)=(.*)$/);
+      if (match) {
+        const key = match[1].trim();
+        const value = match[2].trim();
+        if (!process.env[key]) {
+          process.env[key] = value;
+        }
+      }
+    }
+  }
+}
+
+// Load env at module initialization
+loadEnv();
 
 export interface TestTx {
   query<T = unknown>(sql: string, params?: unknown[]): Promise<T[]>;
@@ -51,14 +75,26 @@ function wrap(pool: pg.Pool): TestPool {
 /** The application connection. NOBYPASSRLS, owns nothing. */
 export async function createTestPool(): Promise<TestPool> {
   const url = process.env.DATABASE_URL_APP ?? process.env.DATABASE_URL;
-  if (!url) throw new Error('DATABASE_URL_APP is required for integration tests');
+  if (!url) {
+    throw new Error(
+      'DATABASE_URL_APP environment variable is required for tenant-leak tests.\n' +
+      'Set it in .env file or run:\n' +
+      '  DATABASE_URL_APP=postgres://platform_app:password@localhost:5432/platform_forge_dev pnpm test:tenant-leak'
+    );
+  }
   return wrap(new PgPool({ connectionString: url, max: 5 }));
 }
 
 /** The migration-owner connection. Used only for fixtures and assertions. */
 export async function createOwnerPool(): Promise<TestPool> {
   const url = process.env.DATABASE_URL_OWNER ?? process.env.DATABASE_URL;
-  if (!url) throw new Error('DATABASE_URL_OWNER is required for integration tests');
+  if (!url) {
+    throw new Error(
+      'DATABASE_URL_OWNER environment variable is required for tenant-leak tests.\n' +
+      'Set it in .env file or run:\n' +
+      '  DATABASE_URL_OWNER=postgres://postgres:password@localhost:5432/platform_forge_dev pnpm test:tenant-leak'
+    );
+  }
   return wrap(new PgPool({ connectionString: url, max: 5 }));
 }
 
@@ -66,6 +102,17 @@ export async function createOwnerPool(): Promise<TestPool> {
  * Fixture: insert a tenant and one sample row for it, using the owner
  * connection so RLS doesn't block the setup.
  */
+/** Every test owns its data. No shared fixtures, no test ordering. */
+export async function truncateAll(owner: TestPool): Promise<void> {
+  await owner.transaction(async (tx) => {
+    const rows = await tx.query<{ tablename: string }>(
+      `select tablename from pg_tables where schemaname = 'public'`,
+    );
+    const names = rows.map((r) => '"' + r.tablename + '"').join(', ');
+    if (names) await tx.query('truncate ' + names + ' cascade');
+  });
+}
+
 export async function seedTenant(ownerPool: TestPool, slug: string): Promise<string> {
   const tenantId = randomUUID();
   const userId = randomUUID();
@@ -75,10 +122,10 @@ export async function seedTenant(ownerPool: TestPool, slug: string): Promise<str
 
   await ownerPool.transaction(async (tx) => {
     await tx.query(
-      `insert into tenants (id, slug, name, status, created_at, updated_at)
-       values ($1, $2, $2, 'active', now(), now())
+      `insert into tenants (id, slug, name, locale, timezone, currency, status, created_at, updated_at)
+       values ($1, $2, $3, 'en-US', 'UTC', 'USD', 'active', now(), now())
        on conflict (slug) do update set updated_at = now()`,
-      [tenantId, slug],
+      [tenantId, slug, slug],
     );
     await tx.query(
       `insert into users (id, email, display_name, status, created_at, updated_at)
@@ -87,8 +134,8 @@ export async function seedTenant(ownerPool: TestPool, slug: string): Promise<str
       [userId, `${slug}-owner@example.com`, `${slug} Owner`],
     );
     await tx.query(
-      `insert into memberships (id, tenant_id, user_id, role, status, created_at, updated_at)
-       values ($1, $2, $3, 'owner', 'active', now(), now())
+      `insert into memberships (id, tenant_id, user_id, role, status, joined_at, created_at, updated_at)
+       values ($1, $2, $3, 'owner', 'active', now(), now(), now())
        on conflict do nothing`,
       [randomUUID(), tenantId, userId],
     );
@@ -105,8 +152,8 @@ export async function seedTenant(ownerPool: TestPool, slug: string): Promise<str
       [customerId, tenantId, `${slug}-customer@example.com`, `${slug} Customer`],
     );
     await tx.query(
-      `insert into orders (id, tenant_id, customer_id, order_number, status, currency, total_minor, created_at, updated_at)
-       values ($1, $2, $3, $4, 'pending', 'USD', 1000, now(), now())
+      `insert into orders (id, tenant_id, customer_id, number, status, subtotal_minor, tax_minor, total_minor, currency, placed_at, created_at, updated_at)
+       values ($1, $2, $3, $4, 'pending', 1000, 0, 1000, 'USD', now(), now(), now())
        on conflict do nothing`,
       [orderId, tenantId, customerId, `ORD-${slug}-001`],
     );

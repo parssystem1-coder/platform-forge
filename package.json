@@ -13,16 +13,17 @@
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "test:integration": "turbo run test:integration",
-    "test:tenant-leak": "vitest run tests/tenant-leak.spec.ts",
+    "test:tenant-leak": "vitest run tests/tenant-leak.spec.ts handbook/90-skeleton/tests/tenant-leak.spec.ts",
     "boundaries": "depcruise apps packages --config .dependency-cruiser.cjs",
     "contract:drift": "node scripts/openapi-drift.mjs && node scripts/error-catalog-drift.mjs",
     "verify": "pnpm lint && pnpm typecheck && pnpm boundaries && pnpm contract:drift && pnpm test",
     "verify:full": "pnpm verify && pnpm test:tenant-leak",
     "infra:up": "docker compose up -d",
     "infra:down": "docker compose down -v",
-    "db:bootstrap": "psql \"$DATABASE_URL_SUPER\" -f handbook/30-data/ddl/amendment/0000_bootstrap_roles.sql",
+    "db:setup": "node scripts/db-setup.mjs",
+    "db:bootstrap": "node scripts/db-bootstrap.mjs",
     "db:migrate": "node scripts/migrate.mjs",
-    "db:reset": "pnpm infra:down && pnpm infra:up && pnpm db:bootstrap && pnpm db:migrate"
+    "db:reset": "pnpm infra:down && pnpm infra:up && pnpm db:setup"
   },
   "devDependencies": {
     "@types/node": "^22.13.4",
