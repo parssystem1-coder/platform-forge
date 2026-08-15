@@ -10,7 +10,9 @@
 #
 # Any failed statement aborts the run (ON_ERROR_STOP).
 # =====================================================================
-set -exuo pipefail
+set -euo pipefail
+
+trap 'echo "=== SCRIPT FAILED AT LINE $LINENO ==="' ERR
 
 DDL_DIR="${DDL_DIR:-handbook/30-data/ddl}"
 MIGRATION_PASSWORD="${MIGRATION_PASSWORD:-ci-migration-password}"
