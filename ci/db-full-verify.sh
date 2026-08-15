@@ -12,23 +12,6 @@
 # =====================================================================
 set -euo pipefail
 
-LOG_FILE="/tmp/db-verify.log"
-exec > >(tee -a "$LOG_FILE") 2>&1
-
-handle_error() {
-  local exit_code=$?
-  echo "=== SCRIPT FAILED WITH EXIT CODE $exit_code AT LINE $1 ==="
-  if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
-    echo "## Database Full Chain Verification Failed" >> "$GITHUB_STEP_SUMMARY"
-    echo "\`\`\`text" >> "$GITHUB_STEP_SUMMARY"
-    tail -n 50 "$LOG_FILE" >> "$GITHUB_STEP_SUMMARY"
-    echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"
-  fi
-  exit "$exit_code"
-}
-
-trap 'handle_error $LINENO' ERR
-
 DDL_DIR="${DDL_DIR:-handbook/30-data/ddl}"
 MIGRATION_PASSWORD="${MIGRATION_PASSWORD:-ci-migration-password}"
 APP_PASSWORD="${APP_PASSWORD:-ci-app-password}"
@@ -43,7 +26,7 @@ PGDATABASE="${PGDATABASE:-platform}"
 PGSUPERUSER="${PGSUPERUSER:-postgres}"
 PGSUPERPASSWORD="${PGSUPERPASSWORD:-postgres}"
 
-export PGHOST PGPORT PGDATABASE PGSUPERUSER PGSUPERPASSWORD
+export PGHOST PGPORT PGDATABASE PGSUPERUSER PGSUPERPASSWORD PGPASSWORD="$PGSUPERPASSWORD"
 
 MIGRATIONS=(
   "0001_core.sql"
@@ -63,19 +46,19 @@ MIGRATIONS=(
 )
 
 psql_super() {
-  PGUSER="$PGSUPERUSER" PGPASSWORD="$PGSUPERPASSWORD" \
-    psql -h "$PGHOST" -p "$PGPORT" -d "$PGDATABASE" -X -v ON_ERROR_STOP=1 "$@"
+  PGPASSWORD="$PGSUPERPASSWORD" \
+    psql -h "$PGHOST" -p "$PGPORT" -U "$PGSUPERUSER" -d "$PGDATABASE" -X -v ON_ERROR_STOP=1 "$@"
 }
 
 psql_role() {
   local role="$1" pw="$2"; shift 2
-  PGUSER="$role" PGPASSWORD="$pw" \
-    psql -h "$PGHOST" -p "$PGPORT" -d "$PGDATABASE" -X -v ON_ERROR_STOP=1 "$@"
+  PGPASSWORD="$pw" \
+    psql -h "$PGHOST" -p "$PGPORT" -U "$role" -d "$PGDATABASE" -X -v ON_ERROR_STOP=1 "$@"
 }
 
 sql_super() {
-  PGUSER="$PGSUPERUSER" PGPASSWORD="$PGSUPERPASSWORD" \
-    psql -h "$PGHOST" -p "$PGPORT" -d "$PGDATABASE" -X -v ON_ERROR_STOP=1 -Atc "$1"
+  PGPASSWORD="$PGSUPERPASSWORD" \
+    psql -h "$PGHOST" -p "$PGPORT" -U "$PGSUPERUSER" -d "$PGDATABASE" -X -v ON_ERROR_STOP=1 -Atc "$1"
 }
 
 echo "Waiting for Postgres at $PGHOST:$PGPORT..."
