@@ -86,9 +86,19 @@ async function setup() {
   const superPool = new pg.Pool({ connectionString: superConnectionString });
   
   const DB_NAME = process.env.PGDATABASE || 'platform_forge_dev';
-  const APP_PASSWORD = process.env.PLATFORM_APP_PASSWORD || 'platform_app_password';
-  const WORKER_PASSWORD = process.env.PLATFORM_WORKER_PASSWORD || 'platform_worker_password';
-  const MIGRATION_PASSWORD = process.env.PLATFORM_MIGRATION_PASSWORD || 'platform_migration_password';
+  
+  // Generate random passwords if not set or if they're placeholder values
+  const generatePassword = () => Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2).toUpperCase() + '1!';
+  
+  const currentAppPassword = process.env.PLATFORM_APP_PASSWORD;
+  const isPlaceholder = !currentAppPassword || currentAppPassword === 'CHANGE_ME' || currentAppPassword.includes('CHANGE');
+  const APP_PASSWORD = isPlaceholder ? generatePassword() : currentAppPassword;
+  
+  const currentWorkerPassword = process.env.PLATFORM_WORKER_PASSWORD;
+  const WORKER_PASSWORD = (!currentWorkerPassword || currentWorkerPassword.includes('CHANGE')) ? generatePassword() : currentWorkerPassword;
+  
+  const currentMigrationPassword = process.env.PLATFORM_MIGRATION_PASSWORD;
+  const MIGRATION_PASSWORD = (!currentMigrationPassword || currentMigrationPassword.includes('CHANGE')) ? generatePassword() : currentMigrationPassword;
   
   try {
     // Test connection
