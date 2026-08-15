@@ -3,9 +3,9 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 export type RequestContext = {
   requestId: string;
   correlationId: string;
-  userId?: string;
-  sessionId?: string;
-  tenantId?: string;
+  userId?: string | undefined;
+  sessionId?: string | undefined;
+  tenantId?: string | undefined;
 };
 
 export const requestContextStorage = new AsyncLocalStorage<RequestContext>();
