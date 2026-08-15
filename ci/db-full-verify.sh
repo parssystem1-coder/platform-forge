@@ -12,7 +12,22 @@
 # =====================================================================
 set -euo pipefail
 
-trap 'echo "=== SCRIPT FAILED AT LINE $LINENO ==="' ERR
+LOG_FILE="/tmp/db-verify.log"
+exec > >(tee -a "$LOG_FILE") 2>&1
+
+handle_error() {
+  local exit_code=$?
+  echo "=== SCRIPT FAILED WITH EXIT CODE $exit_code AT LINE $1 ==="
+  if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
+    echo "## Database Full Chain Verification Failed" >> "$GITHUB_STEP_SUMMARY"
+    echo "\`\`\`text" >> "$GITHUB_STEP_SUMMARY"
+    tail -n 50 "$LOG_FILE" >> "$GITHUB_STEP_SUMMARY"
+    echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"
+  fi
+  exit "$exit_code"
+}
+
+trap 'handle_error $LINENO' ERR
 
 DDL_DIR="${DDL_DIR:-handbook/30-data/ddl}"
 MIGRATION_PASSWORD="${MIGRATION_PASSWORD:-ci-migration-password}"
