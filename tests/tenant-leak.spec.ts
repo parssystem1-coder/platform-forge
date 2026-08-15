@@ -5,9 +5,10 @@
  * because the database itself refuses. Run it against a real Postgres.
  * Mocking here defeats the entire purpose.
  */
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { createTestPool, createOwnerPool, seedTenant, type TestPool } from './helpers/index.js';
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
+import { createTestPool, createOwnerPool, seedTenant, truncateAll, type TestPool } from './helpers/index.js';
 import { UnitOfWork } from '../apps/api/src/kernel/unit-of-work.js';
+import { randomUUID } from 'node:crypto';
 
 describe('tenant isolation', () => {
   let appPool: TestPool;
@@ -19,12 +20,19 @@ describe('tenant isolation', () => {
   beforeAll(async () => {
     appPool = await createTestPool();
     ownerPool = await createOwnerPool();
-    uow = new UnitOfWork(appPool);
-    tenantA = await seedTenant(ownerPool, 'tenant-a');
-    tenantB = await seedTenant(ownerPool, 'tenant-b');
+    uow = new UnitOfWork(appPool as any);
+    
+    // Clear all data before seeding
+    await truncateAll(ownerPool);
+    
+    // Use unique slugs to avoid conflicts
+    const uniqueSuffix = randomUUID().slice(0, 8);
+    tenantA = await seedTenant(ownerPool, `tenant-a-${uniqueSuffix}`);
+    tenantB = await seedTenant(ownerPool, `tenant-b-${uniqueSuffix}`);
   });
 
   afterAll(async () => {
+    await truncateAll(ownerPool);
     await appPool?.end();
     await ownerPool?.end();
   });
