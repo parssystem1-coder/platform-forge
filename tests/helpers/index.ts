@@ -141,8 +141,8 @@ export async function seedTenant(ownerPool: TestPool, slug: string): Promise<str
       [customerId, tenantId, `${slug}-customer@example.com`, `${slug} Customer`],
     );
     await tx.query(
-      `insert into orders (id, tenant_id, customer_id, order_number, status, currency, total_minor, created_at, updated_at)
-       values ($1, $2, $3, $4, 'pending', 'USD', 1000, now(), now())
+      `insert into orders (id, tenant_id, customer_id, number, status, subtotal_minor, tax_minor, total_minor, currency, placed_at, created_at, updated_at)
+       values ($1, $2, $3, $4, 'pending', 1000, 0, 1000, 'USD', now(), now(), now())
        on conflict do nothing`,
       [orderId, tenantId, customerId, `ORD-${slug}-001`],
     );

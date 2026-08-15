@@ -86,25 +86,35 @@ export async function createTestPool(): Promise<TestPool> {
 
 /** The migration-owner connection. Used only for fixtures and assertions. */
 export async function createOwnerPool(): Promise<TestPool> {
-  // Build owner pool URL - use DATABASE_URL which points to platform_forge_dev
-  // If DATABASE_URL points to postgres database, construct correct URL
-  let url = process.env.DATABASE_URL;
+  // First try DATABASE_URL which points to platform_forge_dev
+  // If that doesn't exist, fall back to DATABASE_URL_SUPER but switch to platform_forge_dev
+  let url = process.env.DATABASE_URL ?? '';
   
   if (!url) {
-    // Fallback: use DATABASE_URL_SUPER but replace /postgres with /platform_forge_dev
+    // Use DATABASE_URL_SUPER but switch database from /postgres to /platform_forge_dev
     url = process.env.DATABASE_URL_SUPER ?? '';
     if (url) {
-      url = url.replace(/\/postgres([^/]*)$/, '/platform_forge_dev$1');
+      // Replace /postgres at the end with /platform_forge_dev
+      url = url.replace(/\/postgres$/, '/platform_forge_dev');
+      url = url.replace(/\/postgres\?/, '/platform_forge_dev?');
+      // Also switch user from postgres to platform_migration if needed
+      if (url.includes('://postgres:')) {
+        url = url.replace('://postgres:', '://platform_migration:');
+      }
     }
   }
   
   if (!url) {
     throw new Error(
-      'DATABASE_URL or DATABASE_URL_SUPER environment variable is required for tenant-leak tests.\n' +
-      'Set it in .env file or run:\n' +
-      '  DATABASE_URL=postgres://postgres:password@localhost:5432/platform_forge_dev pnpm test:tenant-leak'
+      'DATABASE_URL or DATABASE_URL_SUPER environment variable is required.\n' +
+      'Set in .env:\n' +
+      '  DATABASE_URL=postgres://postgres:password@localhost:5432/platform_forge_dev\n' +
+      'Or:\n' +
+      '  DATABASE_URL_SUPER=postgres://postgres:password@localhost:5432/postgres'
     );
   }
+  
+  console.log('[vitest] Owner pool connecting to:', url.replace(/:[^:@]+@/, ':***@'));
   
   return wrap(new PgPool({ connectionString: url, max: 5 }));
 }
