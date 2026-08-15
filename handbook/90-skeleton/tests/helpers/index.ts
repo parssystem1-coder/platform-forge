@@ -15,15 +15,19 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-/** Load .env file if exists */
+/** Load .env file if exists - use process.cwd() for cross-platform compatibility */
 function loadEnv() {
-  const envPath = resolve(dirname(fileURLToPath(import.meta.url)), '../../../.env');
+  const envPath = resolve(process.cwd(), '.env');
   if (existsSync(envPath)) {
     const envContent = readFileSync(envPath, 'utf-8');
     for (const line of envContent.split('\n')) {
       const match = line.match(/^([^=]+)=(.*)$/);
-      if (match && !process.env[match[1]]) {
-        process.env[match[1]] = match[2].trim();
+      if (match) {
+        const key = match[1].trim();
+        const value = match[2].trim();
+        if (!process.env[key]) {
+          process.env[key] = value;
+        }
       }
     }
   }

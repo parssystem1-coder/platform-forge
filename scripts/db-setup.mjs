@@ -41,16 +41,25 @@ const MIGRATIONS = [
 ];
 
 async function setup() {
-  // Load .env file if exists
-  const envPath = resolve(__dirname, '../.env');
+  // Load .env file if exists (use process.cwd() for cross-platform compatibility)
+  const envPath = resolve(process.cwd(), '.env');
   if (existsSync(envPath)) {
+    console.log('📄 Loading environment from:', envPath);
     const envContent = readFileSync(envPath, 'utf-8');
     for (const line of envContent.split('\n')) {
       const match = line.match(/^([^=]+)=(.*)$/);
-      if (match && !process.env[match[1]]) {
-        process.env[match[1]] = match[2].trim();
+      if (match) {
+        const key = match[1].trim();
+        const value = match[2].trim();
+        if (!process.env[key]) {
+          process.env[key] = value;
+        }
       }
     }
+  } else {
+    console.log('⚠️  No .env file found at:', envPath);
+    console.log('   Environment variables must be set directly or use:');
+    console.log('   DATABASE_URL_SUPER=postgres://postgres:password@localhost:5432/postgres pnpm db:setup');
   }
 
   const superConnectionString = process.env.DATABASE_URL_SUPER || process.env.DATABASE_URL;

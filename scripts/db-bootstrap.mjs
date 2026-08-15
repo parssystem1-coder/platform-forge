@@ -7,23 +7,49 @@
  * 
  * Usage:
  *   DATABASE_URL_SUPER=postgres://postgres:password@localhost:5432/postgres node scripts/db-bootstrap.mjs
+ * 
+ * Or set in .env and run:
+ *   pnpm db:bootstrap
  */
 
 import pg from 'pg';
-import { readFileSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { readFileSync, existsSync } from 'node:fs';
+import { resolve } from 'node:path';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
+const MIGRATION_FILE = resolve(process.cwd(), 'handbook/30-data/ddl/amendment/0000_bootstrap_roles.sql');
 
-const MIGRATION_FILE = resolve(__dirname, '../handbook/30-data/ddl/amendment/0000_bootstrap_roles.sql');
+/** Load .env file if exists */
+function loadEnv() {
+  const envPath = resolve(process.cwd(), '.env');
+  if (existsSync(envPath)) {
+    console.log('📄 Loading environment from:', envPath);
+    const envContent = readFileSync(envPath, 'utf-8');
+    for (const line of envContent.split('\n')) {
+      const match = line.match(/^([^=]+)=(.*)$/);
+      if (match) {
+        const key = match[1].trim();
+        const value = match[2].trim();
+        if (!process.env[key]) {
+          process.env[key] = value;
+        }
+      }
+    }
+  }
+}
 
 async function bootstrap() {
+  loadEnv();
+  
   const connectionString = process.env.DATABASE_URL_SUPER || process.env.DATABASE_URL;
   
   if (!connectionString) {
     console.error('❌ DATABASE_URL_SUPER or DATABASE_URL environment variable required.');
-    console.error('   Example: DATABASE_URL_SUPER=postgres://postgres:password@localhost:5432/postgres node scripts/db-bootstrap.mjs');
+    console.error('');
+    console.error('Set in .env file:');
+    console.error('   DATABASE_URL_SUPER=postgres://postgres:password@localhost:5432/postgres');
+    console.error('');
+    console.error('Or run directly:');
+    console.error('   DATABASE_URL_SUPER=postgres://postgres:password@localhost:5432/postgres node scripts/db-bootstrap.mjs');
     process.exit(1);
   }
 
@@ -35,7 +61,6 @@ async function bootstrap() {
     const client = await pool.connect();
     const serverVersion = await client.query('SELECT version()');
     console.log(`✅ Connected to: ${serverVersion.rows[0].version.split(',')[0]}`);
-    client.release();
 
     // Read and execute bootstrap SQL
     console.log(`📄 Reading bootstrap SQL: ${MIGRATION_FILE}`);
@@ -47,19 +72,10 @@ async function bootstrap() {
     console.log('✅ Bootstrap completed successfully!');
     console.log('');
     console.log('📝 Next steps:');
-    console.log('   1. Set passwords for the new roles:');
-    console.log('      - platform_migration');
-    console.log('      - platform_app');
-    console.log('      - platform_worker');
-    console.log('');
-    console.log('   2. Create the database:');
-    console.log('      CREATE DATABASE platform_forge_dev;');
-    console.log('');
-    console.log('   3. Grant schema usage:');
-    console.log('      GRANT USAGE ON SCHEMA public TO platform_migration;');
-    console.log('');
-    console.log('   4. Run migrations:');
-    console.log('      node scripts/migrate.mjs');
+    console.log('   1. Set passwords for the new roles (done by db:setup)');
+    console.log('   2. Run: pnpm db:migrate');
+    
+    client.release();
     
   } catch (error) {
     console.error('❌ Bootstrap failed:', error.message);
