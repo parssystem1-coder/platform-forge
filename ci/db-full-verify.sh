@@ -101,14 +101,14 @@ bad_roles=$(sql_super "
   SELECT string_agg(rolname || ' bypassrls=' || rolbypassrls || ' super=' || rolsuper, ', ')
     FROM pg_roles
    WHERE rolname IN ('platform_app','platform_worker','platform_readonly')
-     AND (rolbypassrls OR rolsuper)")
+     AND (rolbypassrls OR rolsuper);")
 [ -z "$bad_roles" ] || fail "unsafe role flags: $bad_roles"
 echo "   OK  app/worker/readonly: NOBYPASSRLS, non-superuser"
 
 # 3.2 Every schema object must be owned by the migration role.
 not_owned=$(sql_super "
   SELECT count(*) FROM pg_tables
-   WHERE schemaname = 'public' AND tableowner <> 'platform_migration'")
+   WHERE schemaname = 'public' AND tableowner <> 'platform_migration';")
 [ "$not_owned" = "0" ] || fail "$not_owned tables not owned by platform_migration"
 echo "   OK  all tables owned by platform_migration"
 
@@ -117,15 +117,14 @@ missing_rls=$(sql_super "
   SELECT coalesce(string_agg(DISTINCT c.relname, ', '), '')
     FROM pg_class c
     JOIN pg_namespace n ON n.oid = c.relnamespace
-    JOIN information_schema.columns col
-      ON col.table_schema = n.nspname AND col.table_name = c.relname
+    JOIN pg_attribute a ON a.attrelid = c.oid
    WHERE n.nspname = 'public' AND c.relkind = 'r'
-     AND col.column_name = 'tenant_id'
-     AND (NOT c.relrowsecurity OR NOT c.relforcerowsecurity)")
+     AND a.attname = 'tenant_id' AND a.attnum > 0 AND NOT a.attisdropped
+     AND (NOT c.relrowsecurity OR NOT c.relforcerowsecurity);")
 [ -z "$missing_rls" ] || fail "tenant tables without forced RLS: $missing_rls"
 echo "   OK  every tenant-bound table has FORCE ROW LEVEL SECURITY"
 
-tables=$(sql_super "SELECT count(*) FROM pg_tables WHERE schemaname = 'public'")
+tables=$(sql_super "SELECT count(*) FROM pg_tables WHERE schemaname = 'public';")
 echo "   OK  $tables tables in public schema"
 
 echo

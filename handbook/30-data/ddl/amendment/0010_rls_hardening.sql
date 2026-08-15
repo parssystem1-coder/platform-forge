@@ -225,11 +225,10 @@ BEGIN
   SELECT array_agg(DISTINCT c.relname ORDER BY c.relname) INTO missing
     FROM pg_class c
     JOIN pg_namespace n ON n.oid = c.relnamespace
-    JOIN information_schema.columns col
-      ON col.table_schema = n.nspname AND col.table_name = c.relname
+    JOIN pg_attribute a ON a.attrelid = c.oid
    WHERE n.nspname = 'public'
      AND c.relkind = 'r'
-     AND col.column_name = 'tenant_id'
+     AND a.attname = 'tenant_id' AND a.attnum > 0 AND NOT a.attisdropped
      AND (c.relrowsecurity = false OR c.relforcerowsecurity = false);
 
   IF missing IS NOT NULL THEN
