@@ -10,7 +10,7 @@
 #
 # Any failed statement aborts the run (ON_ERROR_STOP).
 # =====================================================================
-set -euo pipefail
+set -exuo pipefail
 
 DDL_DIR="${DDL_DIR:-handbook/30-data/ddl}"
 MIGRATION_PASSWORD="${MIGRATION_PASSWORD:-ci-migration-password}"
