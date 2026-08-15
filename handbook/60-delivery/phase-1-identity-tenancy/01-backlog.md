@@ -69,6 +69,7 @@
 ## Definition of Ready
 
 A story is ready when:
+
 - [ ] Acceptance criteria written
 - [ ] Dependencies identified
 - [ ] Point estimate agreed
@@ -77,6 +78,7 @@ A story is ready when:
 ## Definition of Done
 
 A story is done when:
+
 - [ ] Code implemented
 - [ ] Unit tests written
 - [ ] Code reviewed

@@ -129,12 +129,14 @@ CREATE TABLE memberships (
 ## RLS Policies
 
 ### Users (Platform-wide)
+
 ```sql
 -- Users are platform-wide, not tenant-bound
 -- No RLS needed for users table
 ```
 
 ### Sessions
+
 ```sql
 -- Sessions belong to users, platform-wide
 CREATE POLICY sessions_user_read ON sessions
@@ -148,9 +150,11 @@ CREATE POLICY sessions_user_write ON sessions
 ```
 
 ### Tenants
+
 See `amendment/0010_rls_hardening.sql` Section 4 for the three-policy approach.
 
 ### Memberships
+
 See `amendment/0010_rls_hardening.sql` Section 4 for the two-policy approach.
 
 ## Migration Order
@@ -162,6 +166,7 @@ See `amendment/0010_rls_hardening.sql` Section 4 for the two-policy approach.
 ## Seed Data
 
 ### Default Roles
+
 ```sql
 INSERT INTO roles (name, permissions) VALUES
   ('owner', ARRAY['tenant.*', 'member.*', 'billing.view']),
@@ -170,6 +175,7 @@ INSERT INTO roles (name, permissions) VALUES
 ```
 
 ### Default Plan
+
 ```sql
 INSERT INTO plan_versions (name, slug, monthly_price_minor, currency)
 VALUES ('Starter', 'starter', 0, 'USD');

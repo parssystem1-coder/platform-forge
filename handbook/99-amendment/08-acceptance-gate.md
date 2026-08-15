@@ -78,5 +78,5 @@
 ## اقدامات باقی‌مانده برای Gate نهایی
 
 1. ⏳ اجرای `pnpm test:tenant-leak` روی PostgreSQL واقعی
-2. ⏳ اجرای `bash ci/db-full-verify.sh` 
+2. ⏳ اجرای `bash ci/db-full-verify.sh`
 3. ⏳ امضای نهایی با شواهد CI

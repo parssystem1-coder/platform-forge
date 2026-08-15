@@ -7,6 +7,7 @@
 Register a new user account.
 
 **Request:**
+
 ```json
 {
   "email": "user@example.com",
@@ -16,6 +17,7 @@ Register a new user account.
 ```
 
 **Response (201):**
+
 ```json
 {
   "user": {
@@ -36,6 +38,7 @@ Register a new user account.
 ```
 
 **Errors:**
+
 - `409 identity.email_already_used` - Email already registered
 - `422 common.validation_failed` - Invalid input
 
@@ -46,6 +49,7 @@ Register a new user account.
 Authenticate with credentials.
 
 **Request:**
+
 ```json
 {
   "email": "user@example.com",
@@ -54,6 +58,7 @@ Authenticate with credentials.
 ```
 
 **Response (200):**
+
 ```json
 {
   "user": {
@@ -71,6 +76,7 @@ Authenticate with credentials.
 ```
 
 **Errors:**
+
 - `401 identity.invalid_credentials` - Wrong email or password
 - `401 identity.account_locked` - Account temporarily locked
 - `401 identity.mfa_required` - MFA verification required (includes `mfaToken`)
@@ -83,6 +89,7 @@ Authenticate with credentials.
 End the current session.
 
 **Headers:**
+
 ```
 Authorization: Bearer <accessToken>
 ```
@@ -96,6 +103,7 @@ Authorization: Bearer <accessToken>
 Refresh access token.
 
 **Request:**
+
 ```json
 {
   "refreshToken": "uuid"
@@ -103,6 +111,7 @@ Refresh access token.
 ```
 
 **Response (200):**
+
 ```json
 {
   "accessToken": "eyJ...",
@@ -112,6 +121,7 @@ Refresh access token.
 ```
 
 **Errors:**
+
 - `401 identity.session_expired` - Refresh token expired or revoked
 - `401 identity.refresh_token_reused` - Token reuse detected (security event)
 
@@ -122,6 +132,7 @@ Refresh access token.
 Verify email address.
 
 **Request:**
+
 ```json
 {
   "token": "verification-token"
@@ -129,6 +140,7 @@ Verify email address.
 ```
 
 **Response (200):**
+
 ```json
 {
   "user": {
@@ -139,6 +151,7 @@ Verify email address.
 ```
 
 **Errors:**
+
 - `400 identity.invalid_verification_token`
 - `400 identity.expired_verification_token`
 
@@ -149,6 +162,7 @@ Verify email address.
 Request password reset email.
 
 **Request:**
+
 ```json
 {
   "email": "user@example.com"
@@ -156,6 +170,7 @@ Request password reset email.
 ```
 
 **Response (200):**
+
 ```json
 {
   "message": "If the email exists, a reset link has been sent"
@@ -171,6 +186,7 @@ Request password reset email.
 Reset password using token.
 
 **Request:**
+
 ```json
 {
   "token": "reset-token",
@@ -179,6 +195,7 @@ Reset password using token.
 ```
 
 **Response (200):**
+
 ```json
 {
   "message": "Password reset successful"
@@ -186,6 +203,7 @@ Reset password using token.
 ```
 
 **Errors:**
+
 - `400 identity.invalid_reset_token`
 - `400 identity.expired_reset_token`
 - `422 common.validation_failed` - Password too weak
@@ -197,11 +215,13 @@ Reset password using token.
 Enable MFA for the account.
 
 **Headers:**
+
 ```
 Authorization: Bearer <accessToken>
 ```
 
 **Request:**
+
 ```json
 {
   "password": "CurrentPassword"
@@ -209,6 +229,7 @@ Authorization: Bearer <accessToken>
 ```
 
 **Response (200):**
+
 ```json
 {
   "secret": "BASE32SECRET",
@@ -218,6 +239,7 @@ Authorization: Bearer <accessToken>
 ```
 
 **Errors:**
+
 - `401 identity.invalid_credentials` - Wrong password
 - `409 identity.mfa_already_enabled` - MFA already enabled
 
@@ -228,6 +250,7 @@ Authorization: Bearer <accessToken>
 Verify MFA code during login.
 
 **Request:**
+
 ```json
 {
   "mfaToken": "from-login-response",
@@ -236,6 +259,7 @@ Verify MFA code during login.
 ```
 
 **Response (200):**
+
 ```json
 {
   "user": { ... },
@@ -244,6 +268,7 @@ Verify MFA code during login.
 ```
 
 **Errors:**
+
 - `401 identity.invalid_totp`
 - `401 identity.invalid_recovery_code`
 
@@ -254,11 +279,13 @@ Verify MFA code during login.
 Get current user info.
 
 **Headers:**
+
 ```
 Authorization: Bearer <accessToken>
 ```
 
 **Response (200):**
+
 ```json
 {
   "id": "uuid",
@@ -280,11 +307,13 @@ Authorization: Bearer <accessToken>
 Create a new tenant.
 
 **Headers:**
+
 ```
 Authorization: Bearer <accessToken>
 ```
 
 **Request:**
+
 ```json
 {
   "name": "My Store",
@@ -293,6 +322,7 @@ Authorization: Bearer <accessToken>
 ```
 
 **Response (201):**
+
 ```json
 {
   "tenant": {
@@ -314,6 +344,7 @@ Authorization: Bearer <accessToken>
 ```
 
 **Errors:**
+
 - `409 identity.tenant_slug_already_used`
 - `402 billing.feature_not_available` - If creating tenants is a paid feature
 
@@ -324,11 +355,13 @@ Authorization: Bearer <accessToken>
 List user's tenants.
 
 **Headers:**
+
 ```
 Authorization: Bearer <accessToken>
 ```
 
 **Response (200):**
+
 ```json
 {
   "tenants": [
@@ -350,11 +383,13 @@ Authorization: Bearer <accessToken>
 Get tenant details.
 
 **Headers:**
+
 ```
 Authorization: Bearer <accessToken>
 ```
 
 **Response (200):**
+
 ```json
 {
   "id": "uuid",
@@ -376,6 +411,7 @@ Authorization: Bearer <accessToken>
 ```
 
 **Errors:**
+
 - `404 tenancy.tenant_not_found`
 - `403 tenancy.membership_not_found`
 
@@ -386,11 +422,13 @@ Authorization: Bearer <accessToken>
 Update tenant.
 
 **Headers:**
+
 ```
 Authorization: Bearer <accessToken>
 ```
 
 **Request:**
+
 ```json
 {
   "name": "New Store Name"
@@ -400,6 +438,7 @@ Authorization: Bearer <accessToken>
 **Response (200):** Updated tenant object
 
 **Errors:**
+
 - `403 authz.forbidden` - Requires owner role
 
 ---
@@ -409,11 +448,13 @@ Authorization: Bearer <accessToken>
 Switch active tenant context.
 
 **Headers:**
+
 ```
 Authorization: Bearer <accessToken>
 ```
 
 **Response (200):**
+
 ```json
 {
   "tenantId": "uuid",
@@ -423,6 +464,7 @@ Authorization: Bearer <accessToken>
 ```
 
 **Errors:**
+
 - `403 tenancy.membership_not_found`
 
 ---
@@ -432,11 +474,13 @@ Authorization: Bearer <accessToken>
 Invite a member.
 
 **Headers:**
+
 ```
 Authorization: Bearer <accessToken>
 ```
 
 **Request:**
+
 ```json
 {
   "email": "newmember@example.com",
@@ -445,6 +489,7 @@ Authorization: Bearer <accessToken>
 ```
 
 **Response (201):**
+
 ```json
 {
   "membership": {
@@ -458,6 +503,7 @@ Authorization: Bearer <accessToken>
 ```
 
 **Errors:**
+
 - `409 tenancy.membership_exists`
 - `403 authz.forbidden` - Requires owner/admin role
 
@@ -468,6 +514,7 @@ Authorization: Bearer <accessToken>
 Remove a member.
 
 **Headers:**
+
 ```
 Authorization: Bearer <accessToken>
 ```
@@ -475,6 +522,7 @@ Authorization: Bearer <accessToken>
 **Response (204):** No content
 
 **Errors:**
+
 - `409 tenancy.last_owner_cannot_leave`
 - `403 authz.forbidden`
 
@@ -485,11 +533,13 @@ Authorization: Bearer <accessToken>
 Update member role.
 
 **Headers:**
+
 ```
 Authorization: Bearer <accessToken>
 ```
 
 **Request:**
+
 ```json
 {
   "role": "member"
@@ -499,6 +549,7 @@ Authorization: Bearer <accessToken>
 **Response (200):** Updated membership
 
 **Errors:**
+
 - `409 tenancy.cannot_change_own_role`
 - `403 authz.forbidden`
 
@@ -511,6 +562,7 @@ Authorization: Bearer <accessToken>
 List available permissions.
 
 **Response (200):**
+
 ```json
 {
   "permissions": [
@@ -528,6 +580,7 @@ List available permissions.
 List available roles.
 
 **Response (200):**
+
 ```json
 {
   "roles": [
