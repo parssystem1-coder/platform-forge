@@ -15,7 +15,7 @@
  */
 
 import pg from 'pg';
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { existsSync } from 'node:fs';
@@ -88,7 +88,6 @@ async function setup() {
     const testClient = await superPool.connect();
     const serverVersion = await testClient.query('SELECT version()');
     console.log(`✅ Connected to: ${serverVersion.rows[0].version.split(',')[0]}`);
-    testClient.release();
 
     // Step 1: Create database
     console.log(`\n📦 Step 1: Creating database '${DB_NAME}'...`);
@@ -170,16 +169,51 @@ async function setup() {
     console.log(`   - Migrations applied: ${appliedCount}`);
     console.log(`   - Migrations skipped: ${skippedCount}`);
     console.log('');
-    console.log('🔑 Role passwords (save these!):');
+    console.log('🔑 Role passwords:');
     console.log(`   platform_migration: ${MIGRATION_PASSWORD}`);
     console.log(`   platform_app: ${APP_PASSWORD}`);
     console.log(`   platform_worker: ${WORKER_PASSWORD}`);
-    console.log('');
-    console.log('📄 Update your .env file:');
-    console.log(`   DATABASE_URL_APP=postgres://platform_app:${APP_PASSWORD}@localhost:5432/${DB_NAME}`);
+    
+    // Update .env file with DATABASE_URL_APP
+    const newAppUrl = `postgres://platform_app:${APP_PASSWORD}@localhost:5432/${DB_NAME}`;
+    const newWorkerUrl = `postgres://platform_worker:${WORKER_PASSWORD}@localhost:5432/${DB_NAME}`;
+    
+    if (existsSync(envPath)) {
+      let envContent = readFileSync(envPath, 'utf-8');
+      
+      // Replace DATABASE_URL_APP
+      if (envContent.includes('DATABASE_URL_APP=')) {
+        envContent = envContent.replace(/DATABASE_URL_APP=.*/, `DATABASE_URL_APP=${newAppUrl}`);
+      } else {
+        envContent += `\nDATABASE_URL_APP=${newAppUrl}`;
+      }
+      
+      // Replace DATABASE_URL_WORKER if exists, otherwise add it
+      if (envContent.includes('DATABASE_URL_WORKER=')) {
+        envContent = envContent.replace(/DATABASE_URL_WORKER=.*/, `DATABASE_URL_WORKER=${newWorkerUrl}`);
+      } else {
+        envContent += `\nDATABASE_URL_WORKER=${newWorkerUrl}`;
+      }
+      
+      // Update passwords
+      if (envContent.includes('PLATFORM_APP_PASSWORD=')) {
+        envContent = envContent.replace(/PLATFORM_APP_PASSWORD=.*/, `PLATFORM_APP_PASSWORD=${APP_PASSWORD}`);
+      }
+      if (envContent.includes('PLATFORM_WORKER_PASSWORD=')) {
+        envContent = envContent.replace(/PLATFORM_WORKER_PASSWORD=.*/, `PLATFORM_WORKER_PASSWORD=${WORKER_PASSWORD}`);
+      }
+      if (envContent.includes('PLATFORM_MIGRATION_PASSWORD=')) {
+        envContent = envContent.replace(/PLATFORM_MIGRATION_PASSWORD=.*/, `PLATFORM_MIGRATION_PASSWORD=${MIGRATION_PASSWORD}`);
+      }
+      
+      writeFileSync(envPath, envContent);
+      console.log('');
+      console.log('📄 Updated .env file with DATABASE_URL_APP and passwords');
+    }
+    
     console.log('');
     console.log('✅ Ready to run tenant-leak tests!');
-    console.log(`   DATABASE_URL_APP=postgres://platform_app:${APP_PASSWORD}@localhost:5432/${DB_NAME} pnpm test:tenant-leak`);
+    console.log(`   pnpm test:tenant-leak`);
     
   } catch (error) {
     console.error('\n❌ Setup failed:', error.message);

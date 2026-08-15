@@ -13,7 +13,7 @@
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "test:integration": "turbo run test:integration",
-    "test:tenant-leak": "vitest run tests/tenant-leak.spec.ts",
+    "test:tenant-leak": "vitest run tests/tenant-leak.spec.ts handbook/90-skeleton/tests/tenant-leak.spec.ts",
     "boundaries": "depcruise apps packages --config .dependency-cruiser.cjs",
     "contract:drift": "node scripts/openapi-drift.mjs && node scripts/error-catalog-drift.mjs",
     "verify": "pnpm lint && pnpm typecheck && pnpm boundaries && pnpm contract:drift && pnpm test",
