@@ -31,16 +31,15 @@ foreach ($line in $lines) {
     
     $trimmed = $cleanLine.Trim()
     
-    # Sprint name
+    # Sprint name - reset currentId when new sprint starts
     if ($leadingSpaces -eq 2 -and $trimmed.StartsWith("- name:")) {
         $currentSprint = $trimmed.Substring(7).Trim()
-        Write-Host "[LOG] New Sprint: $currentSprint" -ForegroundColor Gray
+        $currentId = ""  # Reset - don't save old amendment with new sprint
     }
     # Amendment id
     elseif ($leadingSpaces -eq 6 -and $trimmed.StartsWith("- id:")) {
-        # Save previous
+        # Save previous only if it's set
         if ($currentId -ne "") {
-            Write-Host "[LOG] Saving: $currentId -> Sprint=$currentSprint" -ForegroundColor Cyan
             $results += @{
                 sprint = $currentSprint
                 id = $currentId
@@ -70,7 +69,6 @@ foreach ($line in $lines) {
 
 # Save last item
 if ($currentId -ne "") {
-    Write-Host "[LOG] Saving LAST: $currentId -> Sprint=$currentSprint" -ForegroundColor Cyan
     $results += @{
         sprint = $currentSprint
         id = $currentId
@@ -80,9 +78,7 @@ if ($currentId -ne "") {
     }
 }
 
-Write-Host ""
-Write-Host "=== Results ===" -ForegroundColor Green
-
+# Display
 foreach ($item in $results) {
     $titleDisplay = if ($item.title.Length -gt 18) { $item.title.Substring(0, 15) + "..." } else { $item.title }
     Write-Host ("{0,-24} | {1,-10} | {2,-21} | {3,-11} | {4}" -f $item.sprint, $item.id, $titleDisplay, $item.status, $item.priority)
