@@ -32,12 +32,15 @@ $currentStatus = ""
 $currentPriority = ""
 
 foreach ($line in $lines) {
-    # Sprint name
-    if ($line -match '^\s+-\s+name:\s+(.+)') {
-        $currentSprint = $Matches[1].Trim()
+    $trimmed = $line.TrimStart()
+    $leadingSpaces = $line.Length - $trimmed.Length
+    
+    # Sprint name: starts at position 2 (for "- name:")
+    if ($leadingSpaces -eq 2 -and $trimmed.StartsWith("- name:")) {
+        $currentSprint = $trimmed.Substring(7).Trim()
     }
-    # Amendment id
-    if ($line -match '^\s+-\s+id:\s+(\S+)') {
+    # Amendment id: starts at position 6 (for "    - id:")
+    elseif ($leadingSpaces -eq 6 -and $trimmed.StartsWith("- id:")) {
         # Save previous
         if ($currentId -ne "") {
             $results = $results + @(@{
@@ -48,22 +51,22 @@ foreach ($line in $lines) {
                 priority = $currentPriority
             })
         }
-        $currentId = $Matches[1]
+        $currentId = $trimmed.Substring(5).Trim()
         $currentTitle = ""
         $currentStatus = ""
         $currentPriority = ""
     }
-    # Title
-    if ($line -match '^\s+title:\s+(.+)') {
-        $currentTitle = $Matches[1].Trim()
+    # Title: starts at position 8 (for "        title:")
+    elseif ($leadingSpaces -eq 8 -and $trimmed.StartsWith("title:")) {
+        $currentTitle = $trimmed.Substring(6).Trim()
     }
     # Status
-    if ($line -match '^\s+status:\s+(\S+)') {
-        $currentStatus = $Matches[1]
+    elseif ($leadingSpaces -eq 8 -and $trimmed.StartsWith("status:")) {
+        $currentStatus = $trimmed.Substring(7).Trim()
     }
     # Priority
-    if ($line -match '^\s+priority:\s+(\S+)') {
-        $currentPriority = $Matches[1]
+    elseif ($leadingSpaces -eq 8 -and $trimmed.StartsWith("priority:")) {
+        $currentPriority = $trimmed.Substring(9).Trim()
     }
 }
 
