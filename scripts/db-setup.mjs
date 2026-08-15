@@ -38,6 +38,7 @@ const MIGRATIONS = [
   'amendment/0011_ledger_integrity.sql',
   'amendment/0012_outbox_hardening.sql',
   'amendment/0013_outbox_platform_scope.sql',
+  'amendment/0014_emergency_products_rls.sql',
 ];
 
 async function setup() {
