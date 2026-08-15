@@ -86,35 +86,23 @@ export async function createTestPool(): Promise<TestPool> {
 
 /** The migration-owner connection. Used only for fixtures and assertions. */
 export async function createOwnerPool(): Promise<TestPool> {
-  // First try DATABASE_URL which points to platform_forge_dev
-  // If that doesn't exist, fall back to DATABASE_URL_SUPER but switch to platform_forge_dev
-  let url = process.env.DATABASE_URL ?? '';
+  let url = process.env.DATABASE_URL;
   
-  if (!url) {
-    // Use DATABASE_URL_SUPER but switch database from /postgres to /platform_forge_dev
-    url = process.env.DATABASE_URL_SUPER ?? '';
-    if (url) {
-      // Replace /postgres at the end with /platform_forge_dev
-      url = url.replace(/\/postgres$/, '/platform_forge_dev');
-      url = url.replace(/\/postgres\?/, '/platform_forge_dev?');
-      // Also switch user from postgres to platform_migration if needed
-      if (url.includes('://postgres:')) {
-        url = url.replace('://postgres:', '://platform_migration:');
-      }
-    }
+  // If DATABASE_URL doesn't exist, construct from DATABASE_URL_SUPER
+  if (!url && process.env.DATABASE_URL_SUPER) {
+    // Replace /postgres with /platform_forge_dev
+    url = process.env.DATABASE_URL_SUPER.replace('/postgres', '/platform_forge_dev');
+    // Also switch user to postgres (superuser)
+    url = url.replace(/:\/\/[^:]+:/, '://postgres:');
   }
   
   if (!url) {
     throw new Error(
-      'DATABASE_URL or DATABASE_URL_SUPER environment variable is required.\n' +
+      'DATABASE_URL environment variable is required.\n' +
       'Set in .env:\n' +
-      '  DATABASE_URL=postgres://postgres:password@localhost:5432/platform_forge_dev\n' +
-      'Or:\n' +
-      '  DATABASE_URL_SUPER=postgres://postgres:password@localhost:5432/postgres'
+      '  DATABASE_URL=postgres://postgres:password@localhost:5432/platform_forge_dev'
     );
   }
-  
-  console.log('[vitest] Owner pool connecting to:', url.replace(/:[^:@]+@/, ':***@'));
   
   return wrap(new PgPool({ connectionString: url, max: 5 }));
 }
