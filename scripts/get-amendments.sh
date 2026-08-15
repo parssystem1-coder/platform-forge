@@ -6,8 +6,8 @@
 
 set -euo pipefail
 
-# مسیر پایه پروژه (Windows: D:\platform-forge)
-PROJECT_ROOT="/mnt/d/platform-forge"
+# مسیر پایه پروژه (Windows: D:\pf-work)
+PROJECT_ROOT="/mnt/d/pf-work"
 AMENDMENTS_FILE="$PROJECT_ROOT/handbook/60-delivery/amendments.yaml"
 
 # پیش‌فرض‌ها

@@ -26,7 +26,7 @@ param(
 $ErrorActionPreference = 'Stop'
 
 # مسیر پایه پروژه
-$ProjectRoot = "D:\platform-forge"
+$ProjectRoot = "D:\pf-work"
 $AmendmentsFile = Join-Path $ProjectRoot "handbook\60-delivery\amendments.yaml"
 
 function Write-Amendment-Table {
