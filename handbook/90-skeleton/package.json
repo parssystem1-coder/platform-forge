@@ -1,0 +1,24 @@
+{
+  "name": "greenfield-platform",
+  "private": true,
+  "packageManager": "pnpm@9.0.0",
+  "engines": { "node": ">=20.11" },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:integration": "turbo run test:integration",
+    "test:tenant-leak": "vitest run tests/tenant-leak.spec.ts",
+    "boundaries": "depcruise apps packages --config .dependency-cruiser.cjs",
+    "contract:drift": "node scripts/openapi-drift.mjs && node scripts/error-catalog-drift.mjs",
+    "verify": "pnpm lint && pnpm typecheck && pnpm boundaries && pnpm contract:drift && pnpm test",
+    "verify:full": "pnpm verify && pnpm test:integration && pnpm test:tenant-leak",
+    "infra:up": "docker compose up -d",
+    "infra:down": "docker compose down -v",
+    "db:bootstrap": "psql \"$DATABASE_URL_SUPER\" -f ../30-data/ddl/amendment/0000_bootstrap_roles.sql",
+    "db:migrate": "node scripts/migrate.mjs",
+    "db:reset": "pnpm infra:down && pnpm infra:up && pnpm db:bootstrap && pnpm db:migrate"
+  }
+}

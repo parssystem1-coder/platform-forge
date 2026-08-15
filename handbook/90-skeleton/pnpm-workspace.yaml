@@ -1,0 +1,5 @@
+# AMENDMENT v3 - closes debt D-002. `pnpm verify` referenced a workspace
+# that did not exist, so a clean clone could never build.
+packages:
+  - 'apps/*'
+  - 'packages/*'

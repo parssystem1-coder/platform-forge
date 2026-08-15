@@ -1,0 +1,210 @@
+openapi: 3.1.0
+info:
+  title: Greenfield SaaS Platform API
+  version: 1.0.0
+servers:
+  - url: https://api.example.com
+paths:
+  /api/v1/auth/register:
+    post:
+      summary: Register a new user and bootstrap a tenant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterResponse'
+        '409':
+          description: Conflict
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /api/v1/auth/verify-email:
+    post:
+      summary: Verify user email with token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token:
+                  type: string
+      responses:
+        '204':
+          description: Verified
+        '400':
+          description: Invalid or expired token
+  /api/v1/auth/login:
+    post:
+      summary: Login with email/password and optional TOTP code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Unauthorized
+  /api/v1/auth/refresh:
+    post:
+      summary: Rotate refresh token and issue a new access token
+      responses:
+        '200':
+          description: Refreshed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefreshResponse'
+        '401':
+          description: Invalid or compromised session
+  /api/v1/me:
+    get:
+      security:
+        - bearerAuth: []
+      summary: Get current user profile and memberships
+      responses:
+        '200':
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeResponse'
+  /api/v1/tenants:
+    get:
+      security:
+        - bearerAuth: []
+      summary: List active memberships for current user
+      responses:
+        '200':
+          description: Tenant memberships
+  /api/v1/tenants/switch:
+    post:
+      security:
+        - bearerAuth: []
+      summary: Validate and switch active tenant context
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tenantId]
+              properties:
+                tenantId:
+                  type: string
+                  format: uuid
+      responses:
+        '204':
+          description: Switched
+  /healthz:
+    get:
+      summary: Liveness probe
+      responses:
+        '200':
+          description: OK
+  /readyz:
+    get:
+      summary: Readiness probe
+      responses:
+        '200':
+          description: Ready
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    RegisterRequest:
+      type: object
+      required: [email, password, displayName, tenantName, tenantSlug]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 12 }
+        displayName: { type: string, minLength: 1 }
+        tenantName: { type: string, minLength: 1 }
+        tenantSlug: { type: string, minLength: 3 }
+        locale: { type: string, default: en-US }
+        timezone: { type: string, default: UTC }
+    RegisterResponse:
+      type: object
+      required: [userId, tenantId, emailVerificationRequired]
+      properties:
+        userId: { type: string, format: uuid }
+        tenantId: { type: string, format: uuid }
+        emailVerificationRequired: { type: boolean }
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string }
+        totpCode: { type: string, minLength: 6, maxLength: 8 }
+    LoginResponse:
+      type: object
+      required: [accessToken, expiresIn, user]
+      properties:
+        accessToken: { type: string }
+        expiresIn: { type: integer }
+        user:
+          $ref: '#/components/schemas/UserSummary'
+    RefreshResponse:
+      type: object
+      required: [accessToken, expiresIn]
+      properties:
+        accessToken: { type: string }
+        expiresIn: { type: integer }
+    UserSummary:
+      type: object
+      required: [id, email, displayName]
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        displayName: { type: string }
+    MeResponse:
+      type: object
+      required: [id, email, displayName, emailVerified, memberships]
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        displayName: { type: string }
+        emailVerified: { type: boolean }
+        memberships:
+          type: array
+          items:
+            type: object
+            required: [tenantId, tenantName, role, status]
+            properties:
+              tenantId: { type: string, format: uuid }
+              tenantName: { type: string }
+              role: { type: string }
+              status: { type: string }
+    Problem:
+      type: object
+      required: [title, status, code, correlationId]
+      properties:
+        type: { type: string }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        code: { type: string }
+        instance: { type: string }
+        correlationId: { type: string, format: uuid }
