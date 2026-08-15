@@ -28,9 +28,6 @@ PGSUPERPASSWORD="${PGSUPERPASSWORD:-postgres}"
 
 export PGHOST PGPORT PGDATABASE PGSUPERUSER PGSUPERPASSWORD
 
-# Canonical migration order. Bootstrap runs as superuser; everything
-# else runs as platform_migration (schema owner). Amendments run LAST:
-# they were written to harden the phase migrations above them.
 MIGRATIONS=(
   "0001_core.sql"
   "0002_commerce.sql"
@@ -48,12 +45,12 @@ MIGRATIONS=(
   "amendment/0013_outbox_platform_scope.sql"
 )
 
-psql_super() { # run a file or -c statement as the superuser
+psql_super() {
   PGUSER="$PGSUPERUSER" PGPASSWORD="$PGSUPERPASSWORD" \
     psql -h "$PGHOST" -p "$PGPORT" -d "$PGDATABASE" -X -v ON_ERROR_STOP=1 "$@"
 }
 
-psql_role() { # psql_role <role> <password> <args...>
+psql_role() {
   local role="$1" pw="$2"; shift 2
   PGUSER="$role" PGPASSWORD="$pw" \
     psql -h "$PGHOST" -p "$PGPORT" -d "$PGDATABASE" -X -v ON_ERROR_STOP=1 "$@"
@@ -64,9 +61,10 @@ sql_super() {
     psql -h "$PGHOST" -p "$PGPORT" -d "$PGDATABASE" -X -v ON_ERROR_STOP=1 -Atc "$1"
 }
 
-# Wait for Postgres to be reachable
+echo "Waiting for Postgres at $PGHOST:$PGPORT..."
 for i in {1..30}; do
   if pg_isready -h "$PGHOST" -p "$PGPORT" -U "$PGSUPERUSER" >/dev/null 2>&1; then
+    echo "Postgres is ready."
     break
   fi
   sleep 1
@@ -76,15 +74,14 @@ echo "== phase 0: bootstrap roles (superuser) =="
 psql_super -f "$DDL_DIR/amendment/0000_bootstrap_roles.sql"
 
 # Ephemeral CI credentials so later steps can log in as each role.
-# In real deploys these are injected by the pipeline, never committed.
-sql_super "ALTER ROLE platform_migration PASSWORD '$MIGRATION_PASSWORD'" >/dev/null
-sql_super "ALTER ROLE platform_app       PASSWORD '$APP_PASSWORD'"       >/dev/null
-sql_super "ALTER ROLE platform_worker    PASSWORD '$WORKER_PASSWORD'"    >/dev/null
+sql_super "ALTER ROLE platform_migration PASSWORD '$MIGRATION_PASSWORD';"
+sql_super "ALTER ROLE platform_app       PASSWORD '$APP_PASSWORD';"
+sql_super "ALTER ROLE platform_worker    PASSWORD '$WORKER_PASSWORD';"
 
 echo "== phase 1: applying ${#MIGRATIONS[@]} migrations as platform_migration =="
 for m in "${MIGRATIONS[@]}"; do
-  echo "--> $m"
-  psql_role platform_migration "$MIGRATION_PASSWORD" -f "$DDL_DIR/$m" >/dev/null
+  echo "--> Applying migration: $m"
+  psql_role platform_migration "$MIGRATION_PASSWORD" -f "$DDL_DIR/$m"
 done
 
 VALIDATION_SQL="tests/sql/p-debt-validation.sql"
