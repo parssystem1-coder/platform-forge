@@ -45,17 +45,23 @@ ALTER ROLE platform_worker    NOBYPASSRLS NOSUPERUSER NOCREATEDB NOCREATEROLE NO
 -- to FORCE RLS tables. It is never used by API or Worker.
 ALTER ROLE platform_migration BYPASSRLS NOSUPERUSER;
 
+-- Install required extensions as superuser
+CREATE EXTENSION IF NOT EXISTS citext;
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 -- Migrations need to install TRUSTED extensions (citext, pgcrypto),
 -- which requires CREATE on the current database, not superuser.
 DO $$
 BEGIN
-  EXECUTE format('GRANT CREATE ON DATABASE %I TO platform_migration', current_database());
+  EXECUTE format('GRANT CREATE, CONNECT ON DATABASE %I TO platform_migration', current_database());
+  EXECUTE format('GRANT CONNECT ON DATABASE %I TO platform_app, platform_worker, platform_readonly', current_database());
 END $$;
 
 -- ---------------------------------------------------------------------
 -- 3. Schema ownership and default privileges
 -- ---------------------------------------------------------------------
 ALTER SCHEMA public OWNER TO platform_migration;
+GRANT ALL ON SCHEMA public TO platform_migration;
 REVOKE ALL ON SCHEMA public FROM PUBLIC;
 GRANT  USAGE ON SCHEMA public TO platform_app, platform_readonly;
 

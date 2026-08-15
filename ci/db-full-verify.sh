@@ -9,28 +9,35 @@
 # and runs the P-DEBT validation suite as the untrusted app role.
 #
 # Any failed statement aborts the run (ON_ERROR_STOP).
-#
-# Required environment:
-#   PGHOST, PGPORT, PGDATABASE   target database (must exist, be empty)
-#   PGSUPERUSER, PGSUPERPASSWORD superuser credentials (bootstrap only)
-# Optional:
-#   MIGRATION_PASSWORD  defaults to 'ci-migration-password'
-#   APP_PASSWORD        defaults to 'ci-app-password'
-#   WORKER_PASSWORD     defaults to 'ci-worker-password'
-#   DDL_DIR             defaults to handbook/30-data/ddl
 # =====================================================================
-set -euo pipefail
 
 DDL_DIR="${DDL_DIR:-handbook/30-data/ddl}"
 MIGRATION_PASSWORD="${MIGRATION_PASSWORD:-ci-migration-password}"
 APP_PASSWORD="${APP_PASSWORD:-ci-app-password}"
 WORKER_PASSWORD="${WORKER_PASSWORD:-ci-worker-password}"
 
-export PGHOST PGPORT PGDATABASE
+PGHOST="${PGHOST:-127.0.0.1}"
+if [ "$PGHOST" = "localhost" ]; then
+  PGHOST="127.0.0.1"
+fi
+PGPORT="${PGPORT:-5432}"
+PGDATABASE="${PGDATABASE:-platform}"
+PGSUPERUSER="${PGSUPERUSER:-postgres}"
+PGSUPERPASSWORD="${PGSUPERPASSWORD:-postgres}"
 
-# Canonical migration order. Bootstrap runs as superuser; everything
-# else runs as platform_migration (schema owner). Amendments run LAST:
-# they were written to harden the phase migrations above them.
+# GitHub Actions dynamic service container port discovery
+if command -v docker >/dev/null 2>&1; then
+  CONTAINER_ID=$(docker ps -q --filter ancestor=postgres:16 2>/dev/null | head -n 1 || true)
+  if [ -n "$CONTAINER_ID" ]; then
+    DETECTED_PORT=$(docker port "$CONTAINER_ID" 5432 2>/dev/null | head -n 1 | awk -F: '{print $NF}' || true)
+    if [ -n "$DETECTED_PORT" ]; then
+      PGPORT="$DETECTED_PORT"
+    fi
+  fi
+fi
+
+export PGHOST PGPORT PGDATABASE PGSUPERUSER PGSUPERPASSWORD PGPASSWORD="$PGSUPERPASSWORD"
+
 MIGRATIONS=(
   "0001_core.sql"
   "0002_commerce.sql"
@@ -48,39 +55,61 @@ MIGRATIONS=(
   "amendment/0013_outbox_platform_scope.sql"
 )
 
-psql_super() { # run a file or -c statement as the superuser
-  PGUSER="$PGSUPERUSER" PGPASSWORD="$PGSUPERPASSWORD" \
-    psql -X -v ON_ERROR_STOP=1 "$@"
+psql_super() {
+  PGPASSWORD="$PGSUPERPASSWORD" \
+    psql -h "$PGHOST" -p "$PGPORT" -U "$PGSUPERUSER" -d "$PGDATABASE" -X -v ON_ERROR_STOP=1 "$@"
 }
 
-psql_role() { # psql_role <role> <password> <args...>
+psql_role() {
   local role="$1" pw="$2"; shift 2
-  PGUSER="$role" PGPASSWORD="$pw" psql -X -v ON_ERROR_STOP=1 "$@"
+  PGPASSWORD="$pw" \
+    psql -h "$PGHOST" -p "$PGPORT" -U "$role" -d "$PGDATABASE" -X -v ON_ERROR_STOP=1 "$@"
 }
 
 sql_super() {
-  PGUSER="$PGSUPERUSER" PGPASSWORD="$PGSUPERPASSWORD" \
-    psql -X -v ON_ERROR_STOP=1 -Atc "$1"
+  PGPASSWORD="$PGSUPERPASSWORD" \
+    psql -h "$PGHOST" -p "$PGPORT" -U "$PGSUPERUSER" -d "$PGDATABASE" -X -v ON_ERROR_STOP=1 -Atc "$1"
 }
 
+echo "Waiting for Postgres at $PGHOST:$PGPORT..."
+for i in {1..30}; do
+  if pg_isready -h "$PGHOST" -p "$PGPORT" -U "$PGSUPERUSER" >/dev/null 2>&1; then
+    echo "Postgres is ready on port $PGPORT."
+    break
+  fi
+  sleep 1
+done
+
 echo "== phase 0: bootstrap roles (superuser) =="
-psql_super -f "$DDL_DIR/amendment/0000_bootstrap_roles.sql"
+if ! psql_super -f "$DDL_DIR/amendment/0000_bootstrap_roles.sql"; then
+  echo "FAILED AT BOOTSTRAP ROLES!"
+  exit 1
+fi
 
 # Ephemeral CI credentials so later steps can log in as each role.
-# In real deploys these are injected by the pipeline, never committed.
-sql_super "ALTER ROLE platform_migration PASSWORD '$MIGRATION_PASSWORD'" >/dev/null
-sql_super "ALTER ROLE platform_app       PASSWORD '$APP_PASSWORD'"       >/dev/null
-sql_super "ALTER ROLE platform_worker    PASSWORD '$WORKER_PASSWORD'"    >/dev/null
+sql_super "ALTER ROLE platform_migration PASSWORD '$MIGRATION_PASSWORD';"
+sql_super "ALTER ROLE platform_app       PASSWORD '$APP_PASSWORD';"
+sql_super "ALTER ROLE platform_worker    PASSWORD '$WORKER_PASSWORD';"
 
 echo "== phase 1: applying ${#MIGRATIONS[@]} migrations as platform_migration =="
 for m in "${MIGRATIONS[@]}"; do
-  echo "--> $m"
-  psql_role platform_migration "$MIGRATION_PASSWORD" -f "$DDL_DIR/$m" >/dev/null
+  echo "--> Applying migration: $m"
+  if ! psql_role platform_migration "$MIGRATION_PASSWORD" -f "$DDL_DIR/$m"; then
+    echo "FAILED AT MIGRATION: $m"
+    exit 1
+  fi
 done
 
+VALIDATION_SQL="tests/sql/p-debt-validation.sql"
+if [ ! -f "$VALIDATION_SQL" ]; then
+  VALIDATION_SQL="handbook/90-skeleton/tests/sql/p-debt-validation.sql"
+fi
+
 echo "== phase 2: P-DEBT validation suite (as platform_app) =="
-psql_role platform_app "$APP_PASSWORD" \
-  -f handbook/90-skeleton/tests/sql/p-debt-validation.sql
+if ! psql_role platform_app "$APP_PASSWORD" -f "$VALIDATION_SQL"; then
+  echo "FAILED AT VALIDATION SUITE!"
+  exit 1
+fi
 
 echo "== phase 3: audit assertions =="
 
@@ -91,14 +120,14 @@ bad_roles=$(sql_super "
   SELECT string_agg(rolname || ' bypassrls=' || rolbypassrls || ' super=' || rolsuper, ', ')
     FROM pg_roles
    WHERE rolname IN ('platform_app','platform_worker','platform_readonly')
-     AND (rolbypassrls OR rolsuper)")
+     AND (rolbypassrls OR rolsuper);")
 [ -z "$bad_roles" ] || fail "unsafe role flags: $bad_roles"
 echo "   OK  app/worker/readonly: NOBYPASSRLS, non-superuser"
 
 # 3.2 Every schema object must be owned by the migration role.
 not_owned=$(sql_super "
   SELECT count(*) FROM pg_tables
-   WHERE schemaname = 'public' AND tableowner <> 'platform_migration'")
+   WHERE schemaname = 'public' AND tableowner <> 'platform_migration';")
 [ "$not_owned" = "0" ] || fail "$not_owned tables not owned by platform_migration"
 echo "   OK  all tables owned by platform_migration"
 
@@ -107,15 +136,14 @@ missing_rls=$(sql_super "
   SELECT coalesce(string_agg(DISTINCT c.relname, ', '), '')
     FROM pg_class c
     JOIN pg_namespace n ON n.oid = c.relnamespace
-    JOIN information_schema.columns col
-      ON col.table_schema = n.nspname AND col.table_name = c.relname
+    JOIN pg_attribute a ON a.attrelid = c.oid
    WHERE n.nspname = 'public' AND c.relkind = 'r'
-     AND col.column_name = 'tenant_id'
-     AND (NOT c.relrowsecurity OR NOT c.relforcerowsecurity)")
+     AND a.attname = 'tenant_id' AND a.attnum > 0 AND NOT a.attisdropped
+     AND (NOT c.relrowsecurity OR NOT c.relforcerowsecurity);")
 [ -z "$missing_rls" ] || fail "tenant tables without forced RLS: $missing_rls"
 echo "   OK  every tenant-bound table has FORCE ROW LEVEL SECURITY"
 
-tables=$(sql_super "SELECT count(*) FROM pg_tables WHERE schemaname = 'public'")
+tables=$(sql_super "SELECT count(*) FROM pg_tables WHERE schemaname = 'public';")
 echo "   OK  $tables tables in public schema"
 
 echo

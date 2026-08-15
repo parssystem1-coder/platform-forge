@@ -1,5 +1,4 @@
-CREATE EXTENSION IF NOT EXISTS citext;
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+-- Phase 1 Core DDL. Extensions (citext, pgcrypto) installed during superuser bootstrap.
 
 CREATE TABLE users (
   id uuid PRIMARY KEY,

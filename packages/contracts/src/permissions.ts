@@ -1,0 +1,25 @@
+export const STANDARD_PERMISSIONS = [
+  'identity.user.read',
+  'identity.session.revoke',
+  'tenancy.tenant.read',
+  'tenancy.tenant.update',
+  'tenancy.member.read',
+  'tenancy.member.invite',
+  'tenancy.member.remove',
+  'tenancy.member.change_role',
+  'commerce.product.read',
+  'commerce.product.create',
+  'commerce.product.update',
+  'commerce.product.delete',
+  'commerce.order.read',
+  'commerce.order.update',
+  'commerce.order.refund',
+  'commerce.inventory.adjust',
+  'commerce.customer.read',
+  'billing.subscription.read',
+  'billing.subscription.change',
+  'billing.invoice.read',
+  'api.key.manage',
+] as const;
+
+export type StandardPermission = typeof STANDARD_PERMISSIONS[number];
