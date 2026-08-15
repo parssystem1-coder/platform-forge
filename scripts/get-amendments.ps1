@@ -11,23 +11,26 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-# Project base path
 $ProjectRoot = "D:\pf-work"
 $AmendmentsFile = Join-Path $ProjectRoot "handbook\60-delivery\amendments.yaml"
 
 function Write-Amendment-Table {
-    param($Amendments)
+    param($Data)
     
     $tableData = @()
-    foreach ($sprint in $Amendments.sprints) {
-        foreach ($amendment in $sprint.amendments) {
-            $tableData += [PSCustomObject]@{
-                'Sprint' = $sprint.name
-                'ID' = $amendment.id
-                'Title' = $amendment.title
-                'Status' = $amendment.status
-                'Priority' = $amendment.priority
-            }
+    foreach ($item in $Data) {
+        $statusColor = switch ($item.status) {
+            'completed' { 'Green' }
+            'pending' { 'Yellow' }
+            'in_progress' { 'Cyan' }
+            default { 'White' }
+        }
+        $tableData += [PSCustomObject]@{
+            Sprint = $item.sprint
+            ID = $item.id
+            Title = $item.title
+            Status = $item.status
+            Priority = $item.priority
         }
     }
     
@@ -35,26 +38,8 @@ function Write-Amendment-Table {
 }
 
 function Write-Amendment-Json {
-    param($Amendments)
-    $Amendments | ConvertTo-Json -Depth 10
-}
-
-function Write-Amendment-Yaml {
-    param($Amendments)
-    $output = @()
-    foreach ($sprint in $Amendments.sprints) {
-        $output += "`n# $($sprint.name)"
-        foreach ($amendment in $sprint.amendments) {
-            $output += "- id: $($amendment.id)"
-            $output += "  title: `"$($amendment.title)`""
-            $output += "  status: $($amendment.status)"
-            $output += "  priority: $($amendment.priority)"
-            if ($amendment.description) {
-                $output += "  description: `"$($amendment.description)`""
-            }
-        }
-    }
-    $output -join "`n"
+    param($Data)
+    @{ sprints = $Data } | ConvertTo-Json -Depth 10
 }
 
 try {
@@ -64,93 +49,83 @@ try {
     Write-Host ""
     
     if (-not (Test-Path $AmendmentsFile)) {
-        Write-Host "WARNING: amendments.yaml not found" -ForegroundColor Yellow
-        Write-Host "Path: $AmendmentsFile" -ForegroundColor Gray
-        
-        $HandbookDir = Split-Path $AmendmentsFile
-        if (-not (Test-Path $HandbookDir)) {
-            New-Item -ItemType Directory -Path $HandbookDir -Force | Out-Null
-            Write-Host "Created: $HandbookDir" -ForegroundColor Green
-        }
-        
-        $sampleContent = @"
-sprints:
-  - name: Sprint 3 (P-IDENTITY)
-    amendments:
-      - id: AMEND-001
-        title: Add MFA with TOTP
-        status: completed
-        priority: P1
-        description: Implement multi-factor auth using otplib
-      - id: AMEND-002
-        title: Improve backup codes
-        status: pending
-        priority: P2
-      - id: AMEND-003
-        title: Test MFA flow
-        status: pending
-        priority: P1
-"@
-        Set-Content -Path $AmendmentsFile -Value $sampleContent -Encoding UTF8
-        Write-Host "Created sample file" -ForegroundColor Green
-        Write-Host ""
+        Write-Host "WARNING: amendments.yaml not found at $AmendmentsFile" -ForegroundColor Yellow
+        exit 0
     }
     
     $content = Get-Content $AmendmentsFile -Raw -Encoding UTF8
+    $lines = $content -split "`r?`n"
     
-    $amendments = @{
-        sprints = @()
-    }
-    
-    $currentSprint = $null
+    $results = @()
+    $currentSprint = ""
     $inAmendments = $false
+    $currentItem = $null
     
-    foreach ($line in ($content -split "`r?`n")) {
+    foreach ($line in $lines) {
+        # Match sprint name: - name: Sprint X
         if ($line -match '^\s*-\s*name:\s*(.+)$') {
-            $currentSprint = @{ name = $Matches[1].Trim(); amendments = @() }
-            $amendments.sprints += $currentSprint
+            $currentSprint = $Matches[1].Trim()
             $inAmendments = $false
         }
-        elseif ($line -match '^\s*amendments:') {
+        # Match amendments: section header
+        elseif ($line -match '^\s*amendments:\s*$') {
             $inAmendments = $true
         }
-        elseif ($inAmendments -and $currentSprint -and $line -match '^\s*-\s*id:\s*(.+)$') {
-            $currentAmendment = @{ id = $Matches[1].Trim() }
-            $currentSprint.amendments += $currentAmendment
-        }
-        elseif ($currentSprint -and $currentSprint.amendments.Count -gt 0) {
-            $currentAmendment = $currentSprint.amendments[-1]
-            if ($line -match '^\s*title:\s*(.+)$') {
-                $currentAmendment.title = $Matches[1].Trim() -replace '^["'']|["'']$', ''
+        # Match amendment: - id: AMEND-XXX
+        elseif ($inAmendments -and $line -match '^\s*-\s*id:\s*(.+)$') {
+            if ($currentItem) {
+                $results += $currentItem
             }
-            elseif ($line -match '^\s*status:\s*(.+)$') {
-                $currentAmendment.status = $Matches[1].Trim()
-            }
-            elseif ($line -match '^\s*priority:\s*(.+)$') {
-                $currentAmendment.priority = $Matches[1].Trim()
-            }
-            elseif ($line -match '^\s*description:\s*(.+)$') {
-                $currentAmendment.description = $Matches[1].Trim() -replace '^["'']|["'']$', ''
+            $currentItem = @{
+                sprint = $currentSprint
+                id = $Matches[1].Trim()
+                title = ""
+                status = ""
+                priority = ""
             }
         }
+        # Match title: title: xxx
+        elseif ($currentItem -and $line -match '^\s+title:\s*(.+)$') {
+            $currentItem.title = $Matches[1].Trim() -replace '^["'']|["'']$', ''
+        }
+        # Match status: status: xxx
+        elseif ($currentItem -and $line -match '^\s+status:\s*(.+)$') {
+            $currentItem.status = $Matches[1].Trim()
+        }
+        # Match priority: priority: xxx
+        elseif ($currentItem -and $line -match '^\s+priority:\s*(.+)$') {
+            $currentItem.priority = $Matches[1].Trim()
+        }
+    }
+    
+    # Add last item
+    if ($currentItem) {
+        $results += $currentItem
+    }
+    
+    if ($results.Count -eq 0) {
+        Write-Host "No amendments found" -ForegroundColor Yellow
+        exit 0
     }
     
     switch ($OutputFormat) {
-        'table' { Write-Amendment-Table $amendments }
-        'json'  { Write-Amendment-Json $amendments }
-        'yaml'  { Write-Amendment-Yaml $amendments }
+        'table' { Write-Amendment-Table $results }
+        'json'  { Write-Amendment-Json $results }
+        'yaml'  { Get-Content $AmendmentsFile -Encoding UTF8 }
     }
     
-    $totalAmendments = ($amendments.sprints | ForEach-Object { $_.amendments }).Count
-    $completedCount = ($amendments.sprints | ForEach-Object { $_.amendments } | Where-Object { $_.status -eq 'completed' }).Count
-    $pendingCount = $totalAmendments - $completedCount
+    $total = $results.Count
+    $completed = ($results | Where-Object { $_.status -eq 'completed' }).Count
+    $pending = $total - $completed
     
-    Write-Host "`n--- Summary ---" -ForegroundColor Cyan
-    Write-Host "Total amendments: $totalAmendments"
-    Write-Host "Completed: $completedCount" -ForegroundColor Green
-    Write-Host "Pending: $pendingCount" -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "--- Summary ---" -ForegroundColor Cyan
+    Write-Host "Total: $total"
+    Write-Host "Completed: $completed" -ForegroundColor Green
+    Write-Host "Pending: $pending" -ForegroundColor Yellow
     
 } catch {
-    Write-Host "`nERROR: $_" -ForegroundColor Red
+    Write-Host ""
+    Write-Host "ERROR: $_" -ForegroundColor Red
     exit 1
 }
