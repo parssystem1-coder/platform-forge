@@ -78,9 +78,13 @@ for m in "${MIGRATIONS[@]}"; do
   psql_role platform_migration "$MIGRATION_PASSWORD" -f "$DDL_DIR/$m" >/dev/null
 done
 
+VALIDATION_SQL="tests/sql/p-debt-validation.sql"
+if [ ! -f "$VALIDATION_SQL" ]; then
+  VALIDATION_SQL="handbook/90-skeleton/tests/sql/p-debt-validation.sql"
+fi
+
 echo "== phase 2: P-DEBT validation suite (as platform_app) =="
-psql_role platform_app "$APP_PASSWORD" \
-  -f handbook/90-skeleton/tests/sql/p-debt-validation.sql
+psql_role platform_app "$APP_PASSWORD" -f "$VALIDATION_SQL"
 
 echo "== phase 3: audit assertions =="
 
