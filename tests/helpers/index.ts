@@ -123,8 +123,8 @@ export async function seedTenant(ownerPool: TestPool, slug: string): Promise<str
       [userId, `${slug}-owner@example.com`, `${slug} Owner`],
     );
     await tx.query(
-      `insert into memberships (id, tenant_id, user_id, role, status, created_at, updated_at)
-       values ($1, $2, $3, 'owner', 'active', now(), now())
+      `insert into memberships (id, tenant_id, user_id, role, status, joined_at, created_at, updated_at)
+       values ($1, $2, $3, 'owner', 'active', now(), now(), now())
        on conflict do nothing`,
       [randomUUID(), tenantId, userId],
     );

@@ -86,20 +86,24 @@ export async function createTestPool(): Promise<TestPool> {
 
 /** The migration-owner connection. Used only for fixtures and assertions. */
 export async function createOwnerPool(): Promise<TestPool> {
-  // Build owner pool URL from DATABASE_URL (which has the correct database)
-  const baseUrl = process.env.DATABASE_URL ?? process.env.DATABASE_URL_SUPER;
-  if (!baseUrl) {
+  // Build owner pool URL - use DATABASE_URL which points to platform_forge_dev
+  // If DATABASE_URL points to postgres database, construct correct URL
+  let url = process.env.DATABASE_URL;
+  
+  if (!url) {
+    // Fallback: use DATABASE_URL_SUPER but replace /postgres with /platform_forge_dev
+    url = process.env.DATABASE_URL_SUPER ?? '';
+    if (url) {
+      url = url.replace(/\/postgres([^/]*)$/, '/platform_forge_dev$1');
+    }
+  }
+  
+  if (!url) {
     throw new Error(
-      'DATABASE_URL environment variable is required for tenant-leak tests.\n' +
+      'DATABASE_URL or DATABASE_URL_SUPER environment variable is required for tenant-leak tests.\n' +
       'Set it in .env file or run:\n' +
       '  DATABASE_URL=postgres://postgres:password@localhost:5432/platform_forge_dev pnpm test:tenant-leak'
     );
-  }
-  
-  // If connecting to postgres database (from DATABASE_URL_SUPER), switch to platform_forge_dev
-  let url = baseUrl;
-  if (baseUrl.includes('/postgres"') || baseUrl.endsWith('/postgres')) {
-    url = baseUrl.replace('/postgres', '/platform_forge_dev');
   }
   
   return wrap(new PgPool({ connectionString: url, max: 5 }));
