@@ -25,35 +25,27 @@ try {
         exit 0
     }
     
-    $content = Get-Content $AmendmentsFile -Raw -Encoding UTF8
-    $lines = $content -split "`r?`n"
+    $lines = Get-Content $AmendmentsFile -Encoding UTF8
     
     $results = @()
     $currentSprint = ""
-    $inAmendments = $false
     $currentItem = $null
-    $indentation = 0
     
     foreach ($line in $lines) {
+        # Trim the line for easier matching
+        $trimmed = $line.TrimStart()
+        $leadingSpaces = $line.Length - $trimmed.Length
+        
         # Skip empty lines
         if ([string]::IsNullOrWhiteSpace($line)) { continue }
         
-        # Calculate indentation level
-        $spaces = $line.Length - $line.TrimStart().Length
-        $indentLevel = [Math]::Floor($spaces / 2)
-        
-        # Match sprints section: - name: Sprint X
-        if ($line -match '^\s+-\s+name:\s+(.+)$') {
-            $currentSprint = $Matches[1].Trim()
-            $inAmendments = $false
-            $indentLevel = 0
+        # Match sprint name: "  - name: xxx"
+        if ($leadingSpaces -eq 2 -and $trimmed.StartsWith("- name:")) {
+            $currentSprint = $trimmed.Substring(7).Trim()
+            $currentItem = $null
         }
-        # Match amendments header
-        elseif ($line -match '^\s+amendments:\s*$') {
-            $inAmendments = $true
-        }
-        # Match amendment entry: - id: AMEND-XXX
-        elseif ($inAmendments -and $line -match '^\s+-\s+id:\s+([^$]+)$') {
+        # Match amendment id: "      - id: xxx"
+        elseif ($leadingSpaces -eq 6 -and $trimmed.StartsWith("- id:")) {
             # Save previous item
             if ($currentItem) {
                 $results += $currentItem
@@ -61,23 +53,23 @@ try {
             # Start new item
             $currentItem = @{
                 sprint = $currentSprint
-                id = $Matches[1].Trim()
+                id = $trimmed.Substring(5).Trim()
                 title = ""
                 status = ""
                 priority = ""
             }
         }
-        # Match title (same indent as id)
-        elseif ($currentItem -and $line -match '^\s{4,}title:\s*(.+)$') {
-            $currentItem.title = $Matches[1].Trim()
+        # Match title: "        title: xxx"
+        elseif ($leadingSpaces -eq 8 -and $currentItem -and $trimmed.StartsWith("title:")) {
+            $currentItem.title = $trimmed.Substring(6).Trim()
         }
-        # Match status
-        elseif ($currentItem -and $line -match '^\s{4,}status:\s*(.+)$') {
-            $currentItem.status = $Matches[1].Trim()
+        # Match status: "        status: xxx"
+        elseif ($leadingSpaces -eq 8 -and $currentItem -and $trimmed.StartsWith("status:")) {
+            $currentItem.status = $trimmed.Substring(7).Trim()
         }
-        # Match priority
-        elseif ($currentItem -and $line -match '^\s{4,}priority:\s*(.+)$') {
-            $currentItem.priority = $Matches[1].Trim()
+        # Match priority: "        priority: xxx"
+        elseif ($leadingSpaces -eq 8 -and $currentItem -and $trimmed.StartsWith("priority:")) {
+            $currentItem.priority = $trimmed.Substring(9).Trim()
         }
     }
     
@@ -93,13 +85,17 @@ try {
     
     # Display results
     foreach ($item in $results) {
-        $statusColor = switch ($item.status) {
-            'completed' { 'Green' }
-            'pending' { 'Yellow' }
-            'in_progress' { 'Cyan' }
-            default { 'White' }
+        $statusDisplay = switch ($item.status) {
+            'completed' { "completed" }
+            'pending' { "pending" }
+            'in_progress' { "in_progress" }
+            default { $item.status }
         }
-        Write-Host ("{0,-24} | {1,-10} | {2,-20} | {3,-11} | {4}" -f $item.sprint, $item.id, $item.title.Substring(0, [Math]::Min(20, $item.title.Length)), $item.status, $item.priority)
+        
+        # Truncate title if too long
+        $titleDisplay = if ($item.title.Length -gt 20) { $item.title.Substring(0, 17) + "..." } else { $item.title }
+        
+        Write-Host ("{0,-24} | {1,-10} | {2,-22} | {3,-11} | {4}" -f $item.sprint, $item.id, $titleDisplay, $statusDisplay, $item.priority)
     }
     
     $total = $results.Count
