@@ -45,6 +45,10 @@ ALTER ROLE platform_worker    NOBYPASSRLS NOSUPERUSER NOCREATEDB NOCREATEROLE NO
 -- to FORCE RLS tables. It is never used by API or Worker.
 ALTER ROLE platform_migration BYPASSRLS NOSUPERUSER;
 
+-- Install required extensions as superuser
+CREATE EXTENSION IF NOT EXISTS citext;
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 -- Migrations need to install TRUSTED extensions (citext, pgcrypto),
 -- which requires CREATE on the current database, not superuser.
 DO $$
