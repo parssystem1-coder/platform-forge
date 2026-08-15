@@ -1,5 +1,10 @@
 # platform-forge
 
+> ⚠️ **فاز جاری: `P-IDENTITY`** (Identity + Tenancy + Authorization)
+>
+> فاز قبلی `P-DEBT` با موفقیت بسته شد. تمام ۳۴ یافته کدی اصلاح شد.
+> اسناد و نقشه فاز مرجع: `handbook/99-amendment/05-canonical-phase-map.md`
+
 Spec, contracts, and data-layer blueprint for a multi-tenant SaaS platform —
 plus a CI gate that verifies the **entire data chain** on every push and PR.
 
