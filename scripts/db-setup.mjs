@@ -135,8 +135,14 @@ async function setup() {
     testClient.release();
     await superPool.end();
 
-    // Connect as platform_migration
-    const migrationUrl = superConnectionString.replace('/postgres', `/${DB_NAME}`).replace('postgres@', `platform_migration:${MIGRATION_PASSWORD}@`);
+    // Connect as platform_migration - build URL from components to avoid parsing issues
+    const pgHost = superConnectionString.match(/@([^:]+)/)?.[1] || 'localhost';
+    const pgPort = superConnectionString.match(/:(\d+)\//)?.[1] || '5432';
+    const dbName = DB_NAME;
+    
+    const migrationUrl = `postgres://platform_migration:${MIGRATION_PASSWORD}@${pgHost}:${pgPort}/${dbName}`;
+    console.log(`🔌 Connecting as platform_migration to ${pgHost}:${pgPort}/${dbName}...`);
+    
     const migrationPool = new pg.Pool({ connectionString: migrationUrl });
     
     // Grant schema ownership
