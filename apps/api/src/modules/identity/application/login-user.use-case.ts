@@ -1,12 +1,27 @@
 import crypto from 'node:crypto';
+import { verify } from '@otplib/totp';
+import { NobleCryptoPlugin } from '@otplib/plugin-crypto-noble';
 import type { LoginRequest, LoginResponse } from '@platform/contracts';
 import type { UnitOfWork } from '../../../kernel/unit-of-work.js';
 import type { PasswordHasherPort, TokenServicePort } from './ports.js';
 import { InvalidCredentialsError } from '../domain/errors.js';
 
+// Initialize plugins
+const cryptoPlugin = new NobleCryptoPlugin();
+
 export interface LoginOptions {
   ipAddress?: string | undefined;
   userAgent?: string | undefined;
+}
+
+export interface LoginResult {
+  response: LoginResponse;
+  refreshToken: string;
+}
+
+export interface MfaRequiredResult {
+  mfaRequired: true;
+  sessionId: string;
 }
 
 export class LoginUserUseCase {
@@ -19,7 +34,7 @@ export class LoginUserUseCase {
   async execute(
     dto: LoginRequest,
     opts: LoginOptions = {},
-  ): Promise<{ response: LoginResponse; refreshToken: string }> {
+  ): Promise<LoginResult | MfaRequiredResult> {
     return this.uow.withPlatform(null, async (tx) => {
       // 1. Find user and credentials
       const rows = await tx.query<{
@@ -69,7 +84,80 @@ export class LoginUserUseCase {
         );
       }
 
-      // 3. Find active memberships
+      // 3. Check if MFA is enabled
+      const mfaFactors = await tx.query<{ id: string; secret_ciphertext: Buffer }>(
+        `SELECT id, secret_ciphertext
+           FROM mfa_totp_factors
+          WHERE user_id = $1 AND verified_at IS NOT NULL;`,
+        [user.id],
+      );
+
+      // If MFA is enabled and no TOTP code provided, require MFA
+      if (mfaFactors.length > 0 && !dto.totpCode) {
+        // Create a pending session
+        const sessionId = crypto.randomUUID();
+        const now = new Date();
+
+        await tx.query(
+          `INSERT INTO sessions (
+             id, user_id, current_refresh_token_id, status, user_agent, ip_address,
+             created_at, last_active_at, expires_at
+           ) VALUES ($1, $2, NULL, 'pending_mfa', $3, $4, $5, $5, $6);`,
+          [
+            sessionId,
+            user.id,
+            opts.userAgent ?? null,
+            opts.ipAddress ?? null,
+            now,
+            new Date(Date.now() + 5 * 60 * 1000), // 5 minute expiry for MFA session
+          ],
+        );
+
+        return {
+          mfaRequired: true,
+          sessionId,
+        };
+      }
+
+      // If MFA is enabled and TOTP code provided, verify it
+      if (mfaFactors.length > 0 && dto.totpCode) {
+        const factor = mfaFactors[0]!;
+        const secret = factor.secret_ciphertext.toString('utf8');
+
+        // Check backup codes first
+        const codeHash = this.tokenService.hashToken(dto.totpCode.toUpperCase());
+        const backupCode = await tx.query<{ id: string }>(
+          `SELECT id FROM mfa_recovery_codes
+            WHERE user_id = $1 AND code_hash = $2 AND used_at IS NULL;`,
+          [user.id, codeHash],
+        );
+
+        let isValidMfa = false;
+
+        if (backupCode.length > 0) {
+          isValidMfa = true;
+          // Mark backup code as used
+          await tx.query(
+            'UPDATE mfa_recovery_codes SET used_at = $1 WHERE id = $2;',
+            [new Date(), backupCode[0]!.id],
+          );
+        } else {
+          // Verify TOTP using otplib
+          const result = await verify({
+            secret,
+            token: dto.totpCode,
+            crypto: cryptoPlugin,
+            epochTolerance: 30, // Allow 30 seconds tolerance
+          });
+          isValidMfa = result.valid;
+        }
+
+        if (!isValidMfa) {
+          throw new InvalidCredentialsError();
+        }
+      }
+
+      // 4. Find active memberships
       const memberships = await tx.query<{
         tenant_id: string;
         role: string;
@@ -82,7 +170,7 @@ export class LoginUserUseCase {
 
       const firstTenant = memberships[0]?.tenant_id;
 
-      // 4. Create Session and Refresh Token
+      // 5. Create Session and Refresh Token
       const sessionId = crypto.randomUUID();
       const rawRefreshToken = this.tokenService.generateOpaqueToken();
       const refreshTokenHash = this.tokenService.hashToken(rawRefreshToken);
@@ -112,7 +200,7 @@ export class LoginUserUseCase {
         [refreshTokenId, sessionId],
       );
 
-      // 5. Generate Access Token (15 mins)
+      // 6. Generate Access Token (15 mins)
       const accessToken = this.tokenService.generateAccessToken(
         {
           userId: user.id,
@@ -121,6 +209,23 @@ export class LoginUserUseCase {
           activeTenantId: firstTenant,
         },
         900,
+      );
+
+      // Emit login event
+      const outboxEventId = crypto.randomUUID();
+      await tx.query(
+        `INSERT INTO outbox_events (
+           id, event_type, event_version, aggregate_type, aggregate_id,
+           tenant_id, payload, correlation_id, occurred_at, status
+         ) VALUES ($1, $2, 1, 'user', $3, NULL, $4, $5, $6, 'pending');`,
+        [
+          outboxEventId,
+          'identity.login_succeeded',
+          user.id,
+          JSON.stringify({ userId: user.id, email: user.email }),
+          crypto.randomUUID(),
+          now,
+        ],
       );
 
       return {

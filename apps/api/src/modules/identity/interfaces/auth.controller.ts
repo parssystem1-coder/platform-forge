@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import type { RegisterUserUseCase } from '../application/register-user.use-case.js';
-import type { LoginUserUseCase } from '../application/login-user.use-case.js';
+import type { LoginUserUseCase, LoginResult, MfaRequiredResult } from '../application/login-user.use-case.js';
 import type { VerifyEmailUseCase } from '../application/verify-email.use-case.js';
 import type { RefreshTokenUseCase } from '../application/refresh-token.use-case.js';
 import type { LogoutUseCase } from '../application/logout.use-case.js';
@@ -53,10 +53,24 @@ export const authRoutes: FastifyPluginAsync<AuthControllerOptions> = async (fast
       });
     }
 
-    const { response, refreshToken } = await opts.loginUseCase.execute(request.body, {
+    const result = await opts.loginUseCase.execute(request.body, {
       ipAddress: request.ip,
       userAgent: request.headers['user-agent'],
     });
+
+    // If MFA is required, return 403 with mfaRequired flag
+    if ('mfaRequired' in result) {
+      return reply.status(403).send({
+        type: 'https://errors.platform.example/identity.mfa_required',
+        title: 'MFA Required',
+        status: 403,
+        code: 'identity.mfa_required',
+        detail: 'Multi-factor authentication is required to complete login',
+        sessionId: (result as MfaRequiredResult).sessionId,
+      });
+    }
+
+    const { response, refreshToken } = result as LoginResult;
 
     reply.setCookie('platform_refresh_token', refreshToken, {
       httpOnly: true,

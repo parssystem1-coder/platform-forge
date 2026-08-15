@@ -1,51 +1,19 @@
 import crypto from 'node:crypto';
+import { generateSecret } from '@otplib/core';
+import { generateTOTP } from '@otplib/uri';
+import { NobleCryptoPlugin } from '@otplib/plugin-crypto-noble';
+import { ScureBase32Plugin } from '@otplib/plugin-base32-scure';
 import type { UnitOfWork } from '../../../kernel/unit-of-work.js';
 import type { TokenServicePort } from './ports.js';
 
-/**
- * TOTP implementation per RFC 6238
- * In production, use a library like otplib or speakeasy
- */
-function generateTOTPSecret(): { secret: string; uri: string } {
-  const secretBytes = crypto.randomBytes(20);
-  const secret = secretBytes.toString('base64');
-  // In production, this URI would be used to generate a QR code
-  const uri = `otpauth://totp/Platform:${encodeURIComponent(secret)}?secret=${secret}&algorithm=SHA1&digits=6&period=30`;
-  return { secret, uri };
-}
-
-function generateTOTPCode(secret: string): string {
-  // Simplified TOTP - in production use otplib
-  const counter = Math.floor(Date.now() / 30000);
-  const counterBuffer = Buffer.alloc(8);
-  counterBuffer.writeBigInt64BE(BigInt(counter));
-
-  const hmac = crypto.createHmac('sha1', Buffer.from(secret, 'base64'));
-  hmac.update(counterBuffer);
-  const hash = hmac.digest();
-
-  const lastByte = hash[hash.length - 1]!;
-  const offset = lastByte & 0x0f;
-  const b0 = hash[offset]!;
-  const b1 = hash[offset + 1]!;
-  const b2 = hash[offset + 2]!;
-  const b3 = hash[offset + 3]!;
-
-  const code =
-    ((b0 & 0x7f) << 24) |
-    ((b1 & 0xff) << 16) |
-    ((b2 & 0xff) << 8) |
-    (b3 & 0xff);
-
-  const otp = code % 1000000;
-  return otp.toString().padStart(6, '0');
-}
+// Initialize plugins
+const cryptoPlugin = new NobleCryptoPlugin();
+const base32Plugin = new ScureBase32Plugin();
 
 export interface EnableMfaResult {
   secret: string;
-  uri: string;
+  otpauthUri: string;
   backupCodes: string[];
-  testCode: string;
 }
 
 export class EnableMfaUseCase {
@@ -55,45 +23,62 @@ export class EnableMfaUseCase {
   ) {}
 
   async execute(userId: string): Promise<EnableMfaResult> {
-    const factorId = crypto.randomUUID();
-    const now = new Date();
-
     return this.uow.withPlatform(null, async (tx) => {
-      // Check if MFA is already enabled
-      const existingFactors = await tx.query<{ id: string }>(
-        `SELECT id FROM mfa_totp_factors WHERE user_id = $1 AND verified_at IS NOT NULL;`,
+      const now = new Date();
+
+      // Check if MFA already enabled
+      const existing = await tx.query<{ id: string }>(
+        `SELECT id FROM mfa_totp_factors WHERE user_id = $1;`,
         [userId],
       );
 
-      if (existingFactors.length > 0) {
-        throw new Error('MFA is already enabled for this user');
+      if (existing.length > 0) {
+        throw new Error('MFA is already enabled');
       }
 
       // Generate TOTP secret
-      const { secret, uri } = generateTOTPSecret();
+      const secret = generateSecret({
+        crypto: cryptoPlugin,
+        base32: base32Plugin,
+      });
 
-      // Generate backup codes (8 one-time codes)
+      // Generate OTPAuth URI for authenticator apps
+      const otpauthUri = generateTOTP({
+        issuer: 'PlatformForge',
+        label: userId,
+        secret,
+      });
+
+      // Generate backup codes (10 codes)
       const backupCodes: string[] = [];
-      for (let i = 0; i < 8; i++) {
-        const code = crypto.randomBytes(8).toString('hex').toUpperCase();
-        backupCodes.push(code);
-        const backupCodeHash = this.tokenService.hashToken(code);
+      const backupCodeHashes: string[] = [];
 
-        const backupId = crypto.randomUUID();
-        await tx.query(
-          `INSERT INTO mfa_recovery_codes (id, user_id, code_hash, used_at, created_at)
-           VALUES ($1, $2, $3, NULL, $4);`,
-          [backupId, userId, backupCodeHash, now],
-        );
+      for (let i = 0; i < 10; i++) {
+        const code = this.generateBackupCode();
+        backupCodes.push(code);
+        backupCodeHashes.push(this.tokenService.hashToken(code));
       }
 
-      // Store TOTP factor (not verified yet - user must verify first code)
-      // The secret should be encrypted in production
+      // Store secret (in production, encrypt this)
+      const factorId = crypto.randomUUID();
+      const encryptedSecret = Buffer.from(secret, 'utf8');
+
       await tx.query(
-        `INSERT INTO mfa_totp_factors (id, user_id, secret_ciphertext, secret_key_version, label, verified_at, created_at, updated_at)
-         VALUES ($1, $2, $3, 'v1', 'Authenticator App', NULL, $4, $4);`,
-        [factorId, userId, Buffer.from(secret, 'utf8'), now],
+        `INSERT INTO mfa_totp_factors (
+           id, user_id, secret_ciphertext, created_at, updated_at
+         ) VALUES ($1, $2, $3, $4, $5);`,
+        [factorId, userId, encryptedSecret, now, now],
       );
+
+      // Store backup codes
+      for (const codeHash of backupCodeHashes) {
+        await tx.query(
+          `INSERT INTO mfa_recovery_codes (
+             id, user_id, code_hash, created_at
+           ) VALUES ($1, $2, $3, $4);`,
+          [crypto.randomUUID(), userId, codeHash, now],
+        );
+      }
 
       // Emit event
       const outboxEventId = crypto.randomUUID();
@@ -104,7 +89,7 @@ export class EnableMfaUseCase {
          ) VALUES ($1, $2, 1, 'user', $3, NULL, $4, $5, $6, 'pending');`,
         [
           outboxEventId,
-          'identity.mfa_setup_initiated',
+          'identity.mfa_enrollment_started',
           userId,
           JSON.stringify({ userId, factorId }),
           crypto.randomUUID(),
@@ -112,15 +97,24 @@ export class EnableMfaUseCase {
         ],
       );
 
-      // Generate a test code for verification
-      const testCode = generateTOTPCode(secret);
-
       return {
         secret,
-        uri,
+        otpauthUri,
         backupCodes,
-        testCode,
       };
     });
+  }
+
+  private generateBackupCode(): string {
+    // Format: XXXX-XXXX-XXXX (alphanumeric)
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = '';
+    for (let i = 0; i < 12; i++) {
+      if (i > 0 && i % 4 === 0) {
+        code += '-';
+      }
+      code += chars[crypto.randomInt(chars.length)];
+    }
+    return code;
   }
 }
