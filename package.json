@@ -1,0 +1,36 @@
+{
+  "name": "platform-forge",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.2.0",
+  "engines": {
+    "node": ">=20.11"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:integration": "turbo run test:integration",
+    "test:tenant-leak": "vitest run tests/tenant-leak.spec.ts",
+    "boundaries": "depcruise apps packages --config .dependency-cruiser.cjs",
+    "contract:drift": "node scripts/openapi-drift.mjs && node scripts/error-catalog-drift.mjs",
+    "verify": "pnpm lint && pnpm typecheck && pnpm boundaries && pnpm contract:drift && pnpm test",
+    "verify:full": "pnpm verify && pnpm test:tenant-leak",
+    "infra:up": "docker compose up -d",
+    "infra:down": "docker compose down -v",
+    "db:bootstrap": "psql \"$DATABASE_URL_SUPER\" -f handbook/30-data/ddl/amendment/0000_bootstrap_roles.sql",
+    "db:migrate": "node scripts/migrate.mjs",
+    "db:reset": "pnpm infra:down && pnpm infra:up && pnpm db:bootstrap && pnpm db:migrate"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.4",
+    "@types/pg": "^8.11.11",
+    "dependency-cruiser": "^16.10.0",
+    "pg": "^8.13.3",
+    "turbo": "^2.4.4",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.5"
+  }
+}
