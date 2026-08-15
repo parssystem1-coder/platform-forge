@@ -17,7 +17,7 @@ commerce.cart_converted
 ## Consumerها
 
 | event | consumer |
-|---|---|
+| --- | --- |
 | product_created/updated | storefront projector |
 | inventory_reserved/released | metrics و audit |
 | order_created | notification، analytics آینده |

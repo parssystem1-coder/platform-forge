@@ -11,7 +11,7 @@
 ## خلاصه آماری
 
 | شدت | تعداد | وضعیت اصلاح |
-|---|---|---|
+| --- | --- | --- |
 | S0 | ۹ | SQL اصلاحی ارائه شد |
 | S1 | ۶ | کد اصلاحی ارائه شد |
 | S2 | ۷ | اصلاح سند + قانون CI |
@@ -24,7 +24,7 @@
 ## بخش A: امنیت و یکپارچگی داده (S0)
 
 | ID | یافته | شاهد | اثر واقعی | اصلاح |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | F-001 | `outbox_events` ستون `tenant_id` دارد اما هیچ RLS و POLICY ندارد | `30-data/ddl/0001_core.sql:138-155`؛ در آرایه جدول‌های `0003_rls_phase2.sql` هم نیست | payload کامل هر رخداد هر مستاجر با یک SELECT ساده از نقش app خوانده می‌شود: سفارش‌ها، ایمیل‌ها، داده هویتی | `0010_rls_hardening.sql` بخش ۱ |
 | F-002 | `outbox_dead_letters` همان مشکل را دارد | `30-data/ddl/phase-3/0006_reliability.sql:3-19` | همان نشت، با payload شکست‌خورده که معمولاً حساس‌تر است | `0010` بخش ۱ |
 | F-003 | تست نشتی خودِ پروژه با این دو جدول قرمز می‌شود | `90-skeleton/tests/tenant-leak.spec.ts` تست «هر جدول دارای tenant_id باید FORCE RLS داشته باشد» | یعنی این تست هرگز اجرا نشده. اگر شده بود از migration اول قرمز بود | با F-001 و F-002 خودکار بسته می‌شود |
@@ -40,7 +40,7 @@
 ## بخش B: باگ‌های اجرایی کد (S1)
 
 | ID | یافته | شاهد | اثر | اصلاح |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | F-010 | `now() + interval 15` سینتکس نامعتبر PostgreSQL است | `kernel/quota-service.ts` ثابت `INSERT_RESERVATION` | «مهم‌ترین SQL پروژه» در اولین اجرا syntax error می‌دهد. باید `interval '15 minutes'` باشد | `quota-service.ts` اصلاح‌شده |
 | F-011 | همان INSERT مقدار عددی `5` را در ستون `status` می‌گذارد | همان فایل | `status` با `CHECK (status IN ('pending','committed','released'))` تعریف شده (`0002_commerce.sql:116`). درج همیشه fail می‌شود | مقدار `'pending'` |
 | F-012 | شمارش پارامترها در `INSERT_RESERVATION` غلط است | همان فایل، `$5` برای idempotency_key | حتی بعد از رفع دو مورد بالا، `expires_at` و `created_at` بدون placeholder می‌مانند | بازنویسی کامل statement |
@@ -53,7 +53,7 @@
 ## بخش C: نقض قوانین خودِ پروژه (S2)
 
 | ID | یافته | شاهد | اثر | اصلاح |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | F-016 | دو پیاده‌سازی موازی `withTenant` وجود دارد | `kernel/unit-of-work.ts` و `db/tenant-db.ts` | نقض «قانون طلایی ۱: مسیر واحد». یکی از این دو حتماً از قلم می‌افتد و همان یکی نشتی می‌دهد | `tenant-db.ts` حذف و تبدیل به re-export منسوخ |
 | F-017 | worker از مسیر داخلی app دیگر import می‌کند | `outbox-publisher.ts`: `import type { Pool } from '../../api/src/kernel/unit-of-work'` | نقض «worker به API وابسته نیست، فقط package مشترک» در Step 2 فاز ۴. dependency-cruiser باید این را قرمز کند و نمی‌کند | انتقال type به `packages/contracts` |
 | F-018 | فاز ۴ هیچ checkbox بسته‌شده‌ای ندارد، اما اسناد فاز ۵ و ۶ و ۷ تولید شده‌اند | `64-delivery/phase-4-architecture-debt/01-backlog.md` و `05-final-review.md` همه `[ ]`، در مقابل وجود `65/66/67-delivery/` | نقض صریح بند ۱۱ `MASTER_AGENT_HANDOFF`: «اگر P0 باز است، ساخت feature جدید ممنوع» | نقشه فاز واحد + قفل Gate در CI |
@@ -67,7 +67,7 @@
 ## بخش D: حاکمیت و ابهام (S3)
 
 | ID | یافته | شاهد | اثر | اصلاح |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | F-023 | سه نقشه فاز متناقض | `MASTER_AGENT_HANDOFF.md` بند ۵ فاز ۴ را Features+Plans می‌داند، `60-delivery/61-roadmap-phases.md` فاز ۳ را Notifications، و پوشه‌های واقعی فاز ۴ را Architecture Debt و ۵ را Commerce Impl | سه مرجع یعنی هیچ مرجع. Agent هر بار فاز دیگری را «جاری» می‌فهمد | `05-canonical-phase-map.md` تنها مرجع |
 | F-024 | `README.md` هفت «فاز جاری» مختلف اعلام می‌کند | بخش‌های تکراری «فاز جاری» برای فازهای ۱ تا ۷ | دستور خود README («فاز جاری را از README تشخیص بده») غیرقابل اجراست | بلوک وضعیت واحد در بالای README |
 | F-025 | هشت پوشه هم‌سطح با نام delivery | `60-` تا `67-delivery/` | شماره‌گذاری معنایش را از دست داده؛ `60-delivery` هم اسناد عمومی دارد هم فاز ۱ | ساختار واحد `60-delivery/phase-N-*/` |
@@ -80,13 +80,13 @@
 ## بخش E: بهبود معماری (S4)
 
 | ID | یافته | چرا مهم است | اصلاح |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | F-029 | `authorize()` برای `kind: 'customer'` همیشه Forbidden می‌دهد | هیچ مسیر مجازی برای خریدار فروشگاه وجود ندارد، پس Storefront ناچار است `authorize` را دور بزند؛ دقیقاً در پرترافیک‌ترین مسیر سیستم | `authorizeCustomer()` مبتنی بر ownership در همان ماژول. ADR-0016 |
 | F-030 | `kind: 'staff'` هیچ مسیری ندارد | Platform Staff عضویت ندارد، پس در lookup رد می‌شود. یعنی Platform Admin realm که ستون مدل هویت است، غیرقابل پیاده‌سازی است | مسیر staff با permission سراسری و audit اجباری impersonation. ADR-0016 |
 | F-031 | دفتر مالی هیچ اجبار توازن بدهکار و بستانکار ندارد | «دفتر دوطرفه» بدون constraint توازن، فقط یک جدول است | trigger توازن deferrable در `0011`. ADR-0017 |
 | F-032 | جدول‌های مالی و audit فقط با convention غیرقابل تغییرند | «اصلاح مالی با reversing entry است» اما `GRANT ... UPDATE, DELETE ON ALL TABLES` به نقش app داده شده | `REVOKE UPDATE, DELETE` روی جدول‌های append-only در `0000_bootstrap_roles.sql` |
 | F-033 | پالیسی RLS جدول `tenants` مسئله مرغ و تخم‌مرغ دارد | پالیسی `id = app.tenant_id` است. در ثبت‌نام هنوز tenant context وجود ندارد پس ساخت tenant غیرممکن است، و کاربر هرگز نمی‌تواند فهرست tenantهایش را بگیرد | خواندن از مسیر `memberships` با پالیسی `EXISTS` و ساخت در تراکنش platform-scope. ADR-0015 |
-| F-034 | ارجاع حلقه‌ای `sessions` و `session_refresh_tokens` غیر deferrable است | `0001_core.sql:117-121` | درج اولین نشست و توکن در یک تراکنش نیازمند ترتیب دقیق است؛ هر بازآرایی کد FK را نقض می‌کند | `DEFERRABLE INITIALLY DEFERRED` در `0010` |
+ F-034 | ارجاع حلقه‌ای `sessions` و `session_refresh_tokens` غیر deferrable است | `0001_core.sql:117-121`؛ درج اولین نشست و توکن در یک تراکنش نیازمند ترتیب دقیق است؛ هر بازآرایی کد FK را نقض می‌کند | `DEFERRABLE INITIALLY DEFERRED` در `0010` |
 
 ---
 

@@ -1,7 +1,7 @@
 # ماتریس ردیابی: نیاز تا معماری تا تست
 
 | نیاز | تصمیم معماری | قرارداد | تست پذیرش |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | User چند Tenant داشته باشد | User جدا از Tenant + Membership | ActorContext | چند membership برای یک User |
 | نشت Tenant ممنوع باشد | RLS + withTenant | TenantContext | Tenant Leak Suite |
 | Customer جدا باشد | Customer Realm | Customer API | ایمیل مشابه در دو Tenant |

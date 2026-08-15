@@ -39,6 +39,7 @@ withTenant(tenantId, fn)
 ```
 
 این helper:
+
 1. transaction باز می‌کند
 2. `SET LOCAL app.tenant_id = '<uuid>'`
 3. callback را اجرا می‌کند
@@ -90,6 +91,7 @@ USING (id = current_setting('app.tenant_id', true)::uuid);
 - `platform_app`: role اجرای اپلیکیشن
 
 قوانین:
+
 - اپلیکیشن با `platform_app` وصل می‌شود
 - `platform_app` مالک جدول‌ها نیست
 - `BYPASSRLS` ندارد
@@ -109,6 +111,7 @@ USING (id = current_setting('app.tenant_id', true)::uuid);
 3. در آینده: custom domain mapping
 
 بعد از resolution:
+
 - membership کاربر در آن tenant چک می‌شود
 - status membership باید active باشد
 - tenant status باید active باشد
@@ -137,6 +140,7 @@ USING (id = current_setting('app.tenant_id', true)::uuid);
 یک suit اجباری لازم است:
 
 ### سناریوها
+
 - user A در tenant A نمی‌تواند membershipهای tenant B را ببیند
 - اگر repository filter فراموش شد، RLS هنوز query را محدود می‌کند
 - اگر `withTenant` استفاده نشود، query fail یا empty شود

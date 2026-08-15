@@ -17,6 +17,7 @@
 ## 11.2 Unit tests
 
 هدف:
+
 - domain invariantها
 - password policy
 - role/permission matrix
@@ -31,6 +32,7 @@ Unit test باید سریع باشد و DB نخواهد.
 ## 11.3 Integration tests
 
 با Postgres واقعی:
+
 - repositories
 - migrations
 - RLS policies
@@ -38,6 +40,7 @@ Unit test باید سریع باشد و DB نخواهد.
 - outbox persistence
 
 با Redis واقعی:
+
 - rate limiting
 - idempotency cache behavior
 
@@ -64,7 +67,8 @@ Unit test باید سریع باشد و DB نخواهد.
 
 این مهم‌ترین سوییت است.
 
-### باید اثبات کند:
+### باید اثبات کند
+
 - کاربر tenant A داده‌ی tenant B را نمی‌بیند
 - فراموشی where clause به نشت منجر نمی‌شود چون RLS عمل می‌کند
 - بدون `SET LOCAL app.tenant_id`، query موفقِ خطرناک رخ نمی‌دهد
@@ -87,6 +91,7 @@ Unit test باید سریع باشد و DB نخواهد.
 ## 11.7 Architecture tests
 
 CI باید fail کند اگر:
+
 - domain از NestJS import کند
 - moduleها circular dependency بسازند
 - interfaces به infrastructure داخلی module دیگر دسترسی بگیرند
@@ -96,6 +101,7 @@ CI باید fail کند اگر:
 ## 11.8 Performance smoke tests
 
 در گام اول benchmark سنگین نمی‌خواهیم، ولی smoke test لازم داریم:
+
 - login p95 under reasonable local/dev target
 - refresh path stable under burst
 - register path transactionally sound under concurrency
@@ -105,6 +111,7 @@ CI باید fail کند اگر:
 ## 11.9 Seed and fixtures
 
 Test data باید deterministic باشد:
+
 - fixed clock
 - seeded UUIDs where needed
 - explicit tenants/users

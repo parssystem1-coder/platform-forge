@@ -3,6 +3,7 @@
 ## 9.1 مدل تهدید گام اول
 
 تهدیدهای واقعی:
+
 - credential stuffing
 - brute force login
 - refresh token theft
@@ -27,6 +28,7 @@
 ### Password change
 
 با تغییر رمز:
+
 - `password_changed_at` update شود
 - همه‌ی sessionهای دیگر revoke شوند یا حداقل گزینه configurable داشته باشیم
 
@@ -51,13 +53,16 @@
 ## 9.4 Sessions
 
 ### مدل
+
 - access token: 15 دقیقه
 - refresh token: 30 روز
 - refresh rotation: on every refresh
 - reuse detection: enabled
 
 ### Access token claims
+
 حداقل:
+
 - `sub` = user id
 - `sid` = session id
 - `iss`
@@ -67,12 +72,14 @@
 - optional: `amr`, `mfa`
 
 ### Refresh token storage
+
 - cookie HttpOnly
 - Secure در non-local
 - SameSite=Lax
 - path محدود به refresh endpoint در صورت امکان
 
 ### Cookie naming
+
 - production: `__Host-refresh_token`
 - local dev: `refresh_token`
 
@@ -83,12 +90,14 @@
 گام اول فقط TOTP + recovery codes.
 
 ### قواعد
+
 - factor بعد از verify فعال می‌شود
 - recovery codeها hashed ذخیره می‌شوند
 - regenerate باید codeهای قبلی را revoke کند
 - login پس از password صحیح ولی قبل از MFA کامل، session کامل نسازد
 
 پیشنهاد:
+
 - یک pending auth challenge state کوتاه‌عمر بسازید، نه session کامل.
 
 ---
@@ -96,6 +105,7 @@
 ## 9.6 Rate limiting
 
 ### Public endpoints
+
 - register
 - login
 - verify-email
@@ -105,13 +115,16 @@
 - refresh
 
 ### پیشنهاد اولیه
+
 - login: 5 تلاش در دقیقه per IP+email
 - reset request: 3 در 15 دقیقه per email/IP
 - register: 5 در ساعت per IP
 - refresh: 30 در 5 دقیقه per session
 
 ### Account lock
+
 بعد از N خطای متوالی:
+
 - lock کوتاه‌مدت exponential
 - audit ثبت شود
 
@@ -132,6 +145,7 @@ can(userId, tenantId, permission): Promise<boolean>
 ## 9.8 Secrets
 
 Secrets شامل:
+
 - JWT signing keys
 - TOTP encryption key
 - email provider key
@@ -139,6 +153,7 @@ Secrets شامل:
 - Redis credentials
 
 قوانین:
+
 - از env یا secret manager
 - versioned rotation plan
 - never in logs
@@ -151,6 +166,7 @@ Secrets شامل:
 لاگ‌ها باید حداقل‌گرایانه باشند.
 
 نباید log شود:
+
 - password
 - token plaintext
 - TOTP secret
@@ -159,6 +175,7 @@ Secrets شامل:
 - cookie values
 
 ممکن است log شود، با masking:
+
 - email
 - IP
 - user agent
@@ -179,6 +196,7 @@ Secrets شامل:
 ## 9.11 Audit-worthy actions
 
 حداقل این‌ها باید audit شوند:
+
 - register
 - email verify
 - login success/fail

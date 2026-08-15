@@ -31,7 +31,7 @@ Every error is `application/problem+json` per RFC 9457:
 ## Status code semantics, non negotiable
 
 | Status | Means | Frontend behaviour |
-|---|---|---|
+| --- | --- | --- |
 | 401 | not authenticated, or session invalid | send to login |
 | 402 | authenticated and permitted, but the plan does not include it | UpgradeCard |
 | 403 | authenticated, but not permitted or not the owner | hide the action |
@@ -44,6 +44,7 @@ Every error is `application/problem+json` per RFC 9457:
 > 402 sells the upgrade.
 
 ## Identity
+
 - `identity.email_already_used` -> 409
 - `identity.tenant_slug_already_used` -> 409
 - `identity.invalid_credentials` -> 401
@@ -61,6 +62,7 @@ Every error is `application/problem+json` per RFC 9457:
 - `identity.session_expired` -> 401  *(added)*
 
 ## Tenancy
+
 - `tenancy.membership_not_found` -> 403
 - `tenancy.tenant_not_active` -> 403
 - `tenancy.invalid_tenant_context` -> 400
@@ -69,12 +71,14 @@ Every error is `application/problem+json` per RFC 9457:
 - `tenancy.provisioning_failed` -> 500  *(added)*
 
 ## Authz
+
 - `authz.forbidden` -> 403
 - `authz.not_resource_owner` -> 403  *(added: the customer realm had no code, F-029)*
 - `authz.scope_missing` -> 403  *(added: machine clients had no code, F-015)*
 - `authz.staff_action_requires_reason` -> 422  *(added: staff access is audited, F-030)*
 
 ## Billing, features and quota
+
 - `billing.feature_not_available` -> 402  *(referenced by authorization.ts, was missing)*
 - `billing.quota_exceeded` -> 429  *(referenced by quota-service.ts, was missing)*
 - `billing.quota_not_configured` -> 409
@@ -89,6 +93,7 @@ Every error is `application/problem+json` per RFC 9457:
 - `billing.webhook_replayed` -> 200  *(idempotent: acknowledged, not an error)*
 
 ## Commerce
+
 - `commerce.product_not_found` -> 404
 - `commerce.variant_not_found` -> 404
 - `commerce.product_slug_already_used` -> 409
@@ -105,16 +110,19 @@ Every error is `application/problem+json` per RFC 9457:
 - `commerce.currency_mismatch` -> 422
 
 ## Storefront and domains
+
 - `storefront.domain_not_mapped` -> 404
 - `storefront.domain_verification_pending` -> 409
 - `storefront.read_model_stale` -> 503
 
 ## Notifications
+
 - `notifications.template_not_found` -> 500
 - `notifications.provider_unavailable` -> 503
 - `notifications.recipient_opted_out` -> 409
 
 ## Platform API and extensibility
+
 - `api.version_unsupported` -> 400
 - `api.key_revoked` -> 401
 - `api.idempotency_key_reused_with_different_body` -> 422
@@ -122,6 +130,7 @@ Every error is `application/problem+json` per RFC 9457:
 - `ai.provider_unavailable` -> 503
 
 ## Common
+
 - `common.validation_failed` -> 422
 - `common.rate_limited` -> 429
 - `common.not_found` -> 404

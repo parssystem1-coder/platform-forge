@@ -4,7 +4,7 @@
 > Priority: Urgent = امنیتی، High = مسدودکننده اجرا، Normal = درستی، Low = حاکمیت.
 
 | # | تسک | Priority | تخمین | یافته |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | 1 | نقش‌های دیتابیس و grantها: جدا کردن app از owner | Urgent | 3h | D-003، F-032 |
 | 2 | RLS روی `outbox_events` و `outbox_dead_letters` با نقش worker | Urgent | 3h | F-001، F-002 |
 | 3 | افزودن `WITH CHECK` به تمام پالیسی‌های فاز ۱ تا ۳ | Urgent | 3h | F-006 |

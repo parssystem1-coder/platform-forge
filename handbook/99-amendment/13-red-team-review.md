@@ -5,7 +5,7 @@
 The previous amendment package was **not safe to execute unchanged**. This review found three blockers before PostgreSQL validation:
 
 | ID | Severity | Finding | Resolution |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | RT-001 | S0 | `platform_migration` was `NOBYPASSRLS`, but it owns `FORCE ROW LEVEL SECURITY` tables and had no policies for most tables. Migrations and fixtures would fail or silently become untestable. | Set the migration role to `BYPASSRLS`; keep API, readonly and worker roles `NOBYPASSRLS`. Migration role is never an application credential. |
 | RT-002 | S0 | Outbox app policies used `IS NOT DISTINCT FROM`, allowing an app connection with no tenant context to read/write platform-level outbox rows (`tenant_id IS NULL`). | Normal app access now requires `tenant_id = app_current_tenant()`. Cross-tenant worker access is explicit and isolated to `platform_worker`. |
 | RT-003 | S1 | `ledger_lines` remained nullable after backfill while its RLS policy treated NULL as a valid app context. The ledger boundary was not strict. | `ledger_lines.tenant_id` is now `NOT NULL`; platform-owned entries are not app-visible. |

@@ -6,7 +6,7 @@
 این سند جلوی سوءبرداشت را می‌گیرد.
 
 | وضعیت | معنا |
-|---|---|
+| --- | --- |
 | `SPEC` | فقط سند و contract؛ implementation ندارد |
 | `SKELETON` | نمونه کد یا bootstrap ناقص برای جهت‌دهی |
 | `INTEGRATION-READY` | کد قابل اتصال، اما ممکن است production hardening بخواهد |
@@ -16,7 +16,7 @@
 ## وضعیت فعلی بسته
 
 | بخش | وضعیت فعلی |
-|---|---|
+| --- | --- |
 | Platform vision | SPEC |
 | Architecture contracts | SPEC |
 | Phase 0 docs | SPEC |

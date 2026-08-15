@@ -3,7 +3,7 @@
 ## نقشه لایه‌ای
 
 | لایه | قابلیت‌ها | وضعیت |
-|---|---|---|
+| --- | --- | --- |
 | تجربه عمومی | سایت معرفی، قیمت‌گذاری، ثبت‌نام، دامنه فروشگاه | فاز ۰ تا ۷ |
 | هویت | User، Login، MFA، Session، Password Reset | فاز ۱ |
 | کسب‌وکار | Tenant، Membership، Invitation، Role | فاز ۱ |
@@ -22,7 +22,7 @@
 ## ماتریس وابستگی
 
 | قابلیت | وابسته به | خروجی برای |
-|---|---|---|
+| --- | --- | --- |
 | Commerce | Identity، Tenancy، AuthZ، Outbox | Storefront، Billing، Analytics |
 | Billing | Tenancy، Ledger، Payment Provider | Feature، Quota، Subscription |
 | AI | AuthZ، Feature، Quota، Usage | SEO، CRM، Support |

@@ -109,7 +109,7 @@ Admin Command
 ## ۷. شکست سرویس‌های جانبی
 
 | سرویس خراب | رفتار صحیح |
-|---|---|
+| --- | --- |
 | Email | داده اصلی commit می‌شود، Outbox retry می‌کند |
 | Redis | مسیرهای حساس باید از Postgres ادامه دهند یا fail closed شوند |
 | AI Provider | fallback یا release quota، بدون ثبت نتیجه جعلی |

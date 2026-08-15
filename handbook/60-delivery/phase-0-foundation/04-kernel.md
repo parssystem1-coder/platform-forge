@@ -3,9 +3,11 @@
 ## اجزا
 
 ### Config
+
 Schema-validated، typed و بدون خواندن مستقیم env در domain.
 
 ### Request Context
+
 ```text
 requestId
 correlationId
@@ -18,15 +20,19 @@ actorKind
 با AsyncLocalStorage در طول request قابل دسترسی است.
 
 ### Unit of Work
+
 تنها مسیر مجاز برای transaction و `withTenant`.
 
 ### Error Layer
+
 تمام خطاها به RFC 9457 Problem Details تبدیل می‌شوند.
 
 ### Observability
+
 Pino structured logs، OpenTelemetry hooks، metrics، health و readiness.
 
 ### Idempotency
+
 برای register، refresh، payment، webhook و order در contract آماده است.
 
 ## Definition of Done

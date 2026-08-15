@@ -3,7 +3,7 @@
 ## سرویس‌ها
 
 | سرویس | کاربرد |
-|---|---|
+| --- | --- |
 | PostgreSQL 16 | منبع حقیقت داده، تراکنش، RLS |
 | Redis 7 | rate limit، lock، idempotency، cache کوتاه‌عمر |
 | Mailpit | دریافت ایمیل در local |

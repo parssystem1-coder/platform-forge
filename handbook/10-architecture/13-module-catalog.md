@@ -5,6 +5,7 @@
 ## ۱۳.۱ Platform Core
 
 ### `platform-kernel` (فاز ۱)
+
 مالک زیرساخت افقی. هیچ منطق کسب‌وکاری ندارد.
 
 - Config با اعتبارسنجی schema
@@ -17,6 +18,7 @@
 - Rate limiter
 
 ### `identity` (فاز ۱)
+
 - User، Credential
 - Email verification، Password reset
 - Session، Refresh rotation، Reuse detection
@@ -25,6 +27,7 @@
 **قرارداد عمومی:** `RegisterUser`, `AuthenticateUser`, `RotateSession`, `RevokeSession`, `GetUserView`
 
 ### `tenancy` (فاز ۱)
+
 - Tenant، Membership، Invitation
 - Tenant context resolution، Tenant switching
 - Tenant lifecycle (active و suspended و archived)
@@ -32,6 +35,7 @@
 **قرارداد عمومی:** `CreateTenant`, `InviteMember`, `AcceptInvitation`, `ResolveTenantContext`, `AssertMembership`
 
 ### `access-control` (فاز ۱)
+
 - Permission registry
 - Role به Permission
 - Feature resolver (فاز ۱: config، فاز ۴: دیتابیس)
@@ -39,6 +43,7 @@
 - تابع واحد `authorize()`
 
 ### `billing` (فاز ۵)
+
 - Plan، PlanVersion، Add-on
 - Subscription lifecycle
 - Invoice، Payment، Refund، Credit، Tax، Proration
@@ -46,24 +51,29 @@
 - Payment provider port و webhook و reconciliation
 
 ### `metering` (فاز ۶)
+
 - Usage event ingestion
 - تجمیع دوره‌ای
 - اتصال به Quota
 
 ### `notifications` (فاز ۳)
+
 - Template، Preference، Localization
 - کانال: Email، بعداً SMS و In-App و Webhook
 
 ### `audit` (فاز ۱)
+
 - رکورد append-only
 - جستجوی محدود برای پنل
 
 ### `outbox` (فاز ۱)
+
 - جدول رخداد
 - Publisher با backoff
 - مصرف‌کننده درون‌پروسه‌ای
 
 ### `domains` (فاز ۷)
+
 - Subdomain mapping
 - Custom domain، تأیید DNS، مدیریت SSL
 
@@ -72,10 +82,11 @@
 ## ۱۳.۲ Domain Modules
 
 ### `commerce` (فاز ۲)
+
 زیردامنه‌ها در یک ماژول، با مرز داخلی روشن:
 
 | زیردامنه | فاز |
-|----------|------|
+| ---------- | ------ |
 | Catalog (Product, Variant, Category, Media) | ۲ |
 | Customer (Shopper identity, Address) | ۲ |
 | Cart و Checkout | ۲ |
@@ -85,6 +96,7 @@
 | Shipping و Coupon و Report | ۳ |
 
 ### دامنه‌های بعدی
+
 `crm` (فاز ۱۰+) · `seo` (فاز ۱۰+) · `accounting` (فاز ۱۱+) · `support` · `analytics`
 
 هر کدام با همان الگو: domain و application و REST و events و permissions و features.
@@ -94,7 +106,7 @@
 ## ۱۳.۳ Extension Layer
 
 | ماژول | فاز | شرط ورود |
-|-------|------|-----------|
+| ------- | ------ | ----------- |
 | `public-api` (API key، scope، نسخه) | ۷ | اولین مشتری که یکپارچگی می‌خواهد |
 | `webhooks` (تحویل به بیرون) | ۷ | همراه public-api |
 | `automation` (Gateway داخلی) | ۹ | دو سناریوی واقعی تکرارشونده |

@@ -11,7 +11,7 @@
 ## ماتریس نقش و دسترسی فاز ۱ و ۲
 
 | Permission | owner | admin | member | viewer | Feature | Quota |
-|-----------|:-----:|:-----:|:------:|:------:|---------|-------|
+| ----------- | :-----: | :-----: | :------: | :------: | --------- | ------- |
 | `identity.user.read` | X | X | X | X | — | — |
 | `identity.session.revoke` | X | X | X | X | — | — |
 | `tenancy.tenant.read` | X | X | X | X | — | — |

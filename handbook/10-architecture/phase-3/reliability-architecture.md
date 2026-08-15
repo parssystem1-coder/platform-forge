@@ -15,7 +15,7 @@ at-least-once delivery
 ## ۲. انواع شکست
 
 | شکست | رفتار صحیح |
-|---|---|
+| --- | --- |
 | API بعد از commit crash کند | Outbox event باقی می‌ماند |
 | Worker هنگام handler crash کند | event دوباره اجرا می‌شود ولی اثر تکراری ندارد |
 | Email provider قطع شود | retry و backlog، بدون rollback داده اصلی |
@@ -66,6 +66,7 @@ consumer_name + event_id
 ```
 
 اگر قبلاً processed شده:
+
 - هیچ side effect جدیدی ایجاد نمی‌شود
 - نتیجه `already_processed` ثبت می‌شود
 - metric duplicate بالا می‌رود

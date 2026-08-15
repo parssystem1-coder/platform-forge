@@ -4,7 +4,7 @@
 > اگر تست قبل از اصلاح قرمز نشده باشد، مطمئن نیستی چیزی را درست کرده‌ای.
 
 | یافته | تسک | فایل اصلاح | تست اثبات |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | F-001 | T-02 | `ddl/amendment/0010` ۱ | `tests/rls/outbox-isolation.spec.ts` |
 | F-002 | T-02 | `0010` ۱ | `tests/rls/outbox-isolation.spec.ts` |
 | F-003 | T-12 | `tests/helpers/index.ts` | `tests/tenant-leak.spec.ts` (کل سوییت) |

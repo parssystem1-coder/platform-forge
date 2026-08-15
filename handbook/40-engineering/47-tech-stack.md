@@ -3,14 +3,17 @@
 ## 3.1 Backend
 
 ### Runtime
+
 - Node.js 22 LTS
 - TypeScript 5.x
 - pnpm 9+
 
 ### Framework
+
 - NestJS 11
 
 **چرا NestJS؟**
+
 - ساختار ماژولی روشن
 - DI مناسب برای مرزهای معماری
 - اکوسیستم mature برای config, OpenAPI, health
@@ -21,15 +24,18 @@
 ## 3.2 Database
 
 ### Primary DB
+
 - PostgreSQL 16+
 
 ### Extensions
+
 - `pgcrypto` برای crypto helpers
 - `citext` برای case-insensitive email
 - `uuid-ossp` فقط در صورت نیاز legacy
 - `pgvector` فقط نصب می‌شود، استفاده‌اش فعلاً خارج از دامنه
 
 **چرا PostgreSQL؟**
+
 - RLS
 - تراکنش‌های قوی
 - JSONB برای تنظیمات سبک
@@ -44,11 +50,13 @@
 - `node-postgres` pool
 
 **چرا Drizzle نه Prisma؟**
+
 - کنترل بهتر روی SQL واقعی
 - friction کمتر برای RLS و `SET LOCAL`
 - مناسب‌تر برای پروژه‌ای که معماری و قرارداد SQL برایش مهم است
 
 قانون:
+
 - Repositoryها اجازه دارند برای queryهای حساس از SQL صریح استفاده کنند.
 - ORM ابزار است، نه مرجع معماری.
 
@@ -59,6 +67,7 @@
 - Redis 7+
 
 استفاده در گام اول:
+
 - rate limiting
 - refresh adjunct state (اختیاری)
 - idempotency short-term cache
@@ -79,6 +88,7 @@ Redis منبع حقیقت نیست.
 ### پارامترهای Argon2id
 
 پیش‌فرض تولید:
+
 - memoryCost: 19456 KiB
 - timeCost: 2
 - parallelism: 1
@@ -98,6 +108,7 @@ Redis منبع حقیقت نیست.
 اگر نخواستید، class-validator هم قابل‌قبول است. اما یکدست بمانید.
 
 **تصمیم این بسته:**
+
 - config با `zod`
 - request DTO با `class-validator`
 
@@ -133,6 +144,7 @@ RLS فقط با PostgreSQL واقعی معنی دارد.
 - Turborepo
 
 چرا؟
+
 - سرعت build بهتر
 - caching مناسب
 - امکان تفکیک apps و packages
@@ -143,6 +155,7 @@ RLS فقط با PostgreSQL واقعی معنی دارد.
 ## 3.10 Frontend در این گام
 
 Frontend اولویت این بسته نیست. با این حال اسکلت پیشنهادی:
+
 - Next.js 15
 - React 19
 - TypeScript
