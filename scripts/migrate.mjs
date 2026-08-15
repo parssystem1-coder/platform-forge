@@ -1,9 +1,9 @@
 #!/usr/bin/env node
-import fs from 'node:fs';
 import path from 'node:path';
 import pg from 'pg';
+import { DatabaseMigrator } from '../packages/database/dist/index.js';
 
-const { Client } = pg;
+const { Pool } = pg;
 
 const MIGRATIONS = [
   '0001_core.sql',
@@ -31,20 +31,40 @@ if (!connectionString) {
 }
 
 async function run() {
-  const client = new Client({ connectionString });
-  await client.connect();
+  const pgPool = new Pool({ connectionString });
+  const pool = {
+    async transaction(fn) {
+      const client = await pgPool.connect();
+      try {
+        await client.query('BEGIN');
+        const tx = {
+          async query(sql, params) {
+            const res = await client.query(sql, params);
+            return res.rows;
+          },
+        };
+        const result = await fn(tx);
+        await client.query('COMMIT');
+        return result;
+      } catch (err) {
+        await client.query('ROLLBACK');
+        throw err;
+      } finally {
+        client.release();
+      }
+    },
+  };
 
-  console.log(`Connected to database. Applying ${MIGRATIONS.length} migrations...`);
+  const migrator = new DatabaseMigrator(pool, {
+    ddlDir,
+    migrations: MIGRATIONS,
+  });
 
-  for (const file of MIGRATIONS) {
-    const fullPath = path.join(ddlDir, file);
-    console.log(`--> Applying: ${file}`);
-    const sql = fs.readFileSync(fullPath, 'utf8');
-    await client.query(sql);
-  }
+  console.log('Starting migration run...');
+  const { applied, skipped } = await migrator.migrate();
 
-  console.log('✓ All migrations applied successfully.');
-  await client.end();
+  console.log(`✓ Migration complete: ${applied.length} applied, ${skipped.length} skipped.`);
+  await pgPool.end();
 }
 
 run().catch((err) => {
