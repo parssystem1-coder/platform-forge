@@ -26,6 +26,17 @@ PGDATABASE="${PGDATABASE:-platform}"
 PGSUPERUSER="${PGSUPERUSER:-postgres}"
 PGSUPERPASSWORD="${PGSUPERPASSWORD:-postgres}"
 
+# GitHub Actions dynamic service container port discovery
+if command -v docker >/dev/null 2>&1; then
+  CONTAINER_ID=$(docker ps -q --filter ancestor=postgres:16 2>/dev/null | head -n 1 || true)
+  if [ -n "$CONTAINER_ID" ]; then
+    DETECTED_PORT=$(docker port "$CONTAINER_ID" 5432 2>/dev/null | head -n 1 | awk -F: '{print $NF}' || true)
+    if [ -n "$DETECTED_PORT" ]; then
+      PGPORT="$DETECTED_PORT"
+    fi
+  fi
+fi
+
 export PGHOST PGPORT PGDATABASE PGSUPERUSER PGSUPERPASSWORD PGPASSWORD="$PGSUPERPASSWORD"
 
 MIGRATIONS=(
@@ -64,7 +75,7 @@ sql_super() {
 echo "Waiting for Postgres at $PGHOST:$PGPORT..."
 for i in {1..30}; do
   if pg_isready -h "$PGHOST" -p "$PGPORT" -U "$PGSUPERUSER" >/dev/null 2>&1; then
-    echo "Postgres is ready."
+    echo "Postgres is ready on port $PGPORT."
     break
   fi
   sleep 1
