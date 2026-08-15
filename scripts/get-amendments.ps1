@@ -31,14 +31,26 @@ foreach ($line in $lines) {
     
     $trimmed = $cleanLine.Trim()
     
-    # Sprint name - reset currentId when new sprint starts
+    # Sprint name
     if ($leadingSpaces -eq 2 -and $trimmed.StartsWith("- name:")) {
+        # SAVE previous amendment BEFORE resetting
+        if ($currentId -ne "") {
+            $results += @{
+                sprint = $currentSprint
+                id = $currentId
+                title = $currentTitle
+                status = $currentStatus
+                priority = $currentPriority
+            }
+        }
         $currentSprint = $trimmed.Substring(7).Trim()
-        $currentId = ""  # Reset - don't save old amendment with new sprint
+        $currentId = ""
+        $currentTitle = ""
+        $currentStatus = ""
+        $currentPriority = ""
     }
     # Amendment id
     elseif ($leadingSpaces -eq 6 -and $trimmed.StartsWith("- id:")) {
-        # Save previous only if it's set
         if ($currentId -ne "") {
             $results += @{
                 sprint = $currentSprint
